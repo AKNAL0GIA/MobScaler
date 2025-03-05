@@ -1,0 +1,10 @@
+modLoader="javafml"
+loaderVersion="[43,)"
+license="MIT License"
+
+[[mods]]
+modId="mobscaler"
+version="1.0.1"
+displayName="Mob Scaler"
+description="Scales mob attributes based on dimension and difficulty"
+authors="Akna"
