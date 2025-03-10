@@ -1,6 +1,7 @@
 package com.example.mobscaler;
 
 import com.example.mobscaler.config.MobScalerConfig;
+import com.example.mobscaler.config.PlayerConfigManager;
 import com.example.mobscaler.events.EntityHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -18,6 +19,8 @@ public class MobScalerMod {
     public MobScalerMod() {
         // Инициализируем конфигурацию сразу, чтобы spec был построен до регистрации обработчиков
         MobScalerConfig.init();
+        // Загружаем конфигурацию игроков
+        PlayerConfigManager.loadConfigs();
         
         @SuppressWarnings("removal")
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();

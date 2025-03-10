@@ -1,10 +1,40 @@
 modLoader="javafml"
-loaderVersion="[43,)"
+loaderVersion="[41,)"
 license="MIT License"
 
 [[mods]]
 modId="mobscaler"
-version="1.0.1"
+version="2.0.1"
 displayName="Mob Scaler"
-description="Scales mob attributes based on dimension and difficulty"
-authors="Akna"
+description='''
+A mod that allows you to customize mob and player attributes based on dimensions and time of day.
+
+Features:
+• Dimension-based mob scaling
+• Day/night cycle modifiers
+• Difficulty-based scaling
+• Player-specific modifiers
+• Blacklist system for mods and entities
+• Separate player and mob configurations
+
+Configure mob and player attributes in config/mobscaler/
+'''
+authors="AKNALOGIA"
+logoFile="logo.png"
+credits="Thanks for download this mod"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/dimension-amplifier-mobscaler"
+displayTest="MATCH_VERSION"
+
+[[dependencies.mobscaler]]
+    modId="forge"
+    mandatory=true
+    versionRange="[41,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.mobscaler]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.19,1.20)"
+    ordering="NONE"
+    side="BOTH"
