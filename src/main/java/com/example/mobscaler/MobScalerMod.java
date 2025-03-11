@@ -1,11 +1,13 @@
 package com.example.mobscaler;
 
+import com.example.mobscaler.commands.ReloadCommand;
 import com.example.mobscaler.config.MobScalerConfig;
 import com.example.mobscaler.config.PlayerConfigManager;
 import com.example.mobscaler.config.DimensionConfigManager;
 import com.example.mobscaler.config.CaveConfigManager;
 import com.example.mobscaler.events.EntityHandler;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -30,6 +32,14 @@ public class MobScalerMod {
 
         // Регистрируем обработчик событий сущностей
         MinecraftForge.EVENT_BUS.register(EntityHandler.class);
+        
+        // Регистрируем обработчик событий команд
+        MinecraftForge.EVENT_BUS.addListener(this::onCommandRegister);
+    }
+
+    private void onCommandRegister(RegisterCommandsEvent event) {
+        ReloadCommand.register(event.getDispatcher());
+        LOGGER.info("MobScaler commands registered successfully");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

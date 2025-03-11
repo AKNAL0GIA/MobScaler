@@ -27,78 +27,79 @@ public class MobScalerConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
-    // Множители сложности для здоровья
+    // Difficulty multipliers for health
     public static final DoubleValue HEALTH_PEACEFUL;
     public static final DoubleValue HEALTH_EASY;
     public static final DoubleValue HEALTH_NORMAL;
     public static final DoubleValue HEALTH_HARD;
 
-    // Множители сложности для урона
+    // Difficulty multipliers for damage
     public static final DoubleValue DAMAGE_PEACEFUL;
     public static final DoubleValue DAMAGE_EASY;
     public static final DoubleValue DAMAGE_NORMAL;
     public static final DoubleValue DAMAGE_HARD;
 
-    // Настройки для измерений
+    // Settings for dimensions
     public static final Map<String, DimensionConfig> DIMENSIONS = new HashMap<>();
 
     static {
-        // Инициализация множителей сложности
+        // Initialize difficulty multipliers
         HEALTH_PEACEFUL = BUILDER
-            .comment("Множитель здоровья для мирной сложности")
-            .defineInRange("difficulty.health.peaceful", 0.5, 0.0, 10.0);
+            .comment("Health multiplier for peaceful difficulty")
+            .defineInRange("difficulty.health.peaceful", 0.7, 0.0, 100.0);
 
         HEALTH_EASY = BUILDER
-            .comment("Множитель здоровья для легкой сложности")
-            .defineInRange("difficulty.health.easy", 0.75, 0.0, 10.0);
+            .comment("Health multiplier for easy difficulty")
+            .defineInRange("difficulty.health.easy", 1, 0.0, 100.0);
 
         HEALTH_NORMAL = BUILDER
-            .comment("Множитель здоровья для нормальной сложности")
-            .defineInRange("difficulty.health.normal", 1.0, 0.0, 10.0);
+            .comment("Health multiplier for normal difficulty")
+            .defineInRange("difficulty.health.normal", 1.2, 0.0, 100.0);
 
         HEALTH_HARD = BUILDER
-            .comment("Множитель здоровья для сложной сложности")
-            .defineInRange("difficulty.health.hard", 1.5, 0.0, 10.0);
+            .comment("Health multiplier for hard difficulty")
+            .defineInRange("difficulty.health.hard", 1.5, 0.0, 100.0);
 
         DAMAGE_PEACEFUL = BUILDER
-            .comment("Множитель урона для мирной сложности")
-            .defineInRange("difficulty.damage.peaceful", 0.5, 0.0, 10.0);
+            .comment("Damage multiplier for peaceful difficulty")
+            .defineInRange("difficulty.damage.peaceful", 0.5, 0.0, 100.0);
 
         DAMAGE_EASY = BUILDER
-            .comment("Множитель урона для легкой сложности")
-            .defineInRange("difficulty.damage.easy", 0.75, 0.0, 10.0);
+            .comment("Damage multiplier for easy difficulty")
+            .defineInRange("difficulty.damage.easy", 1.2, 0.0, 100.0);
 
         DAMAGE_NORMAL = BUILDER
-            .comment("Множитель урона для нормальной сложности")
-            .defineInRange("difficulty.damage.normal", 1.0, 0.0, 10.0);
+            .comment("Damage multiplier for normal difficulty")
+            .defineInRange("difficulty.damage.normal", 1.4, 0.0, 100.0);
 
         DAMAGE_HARD = BUILDER
-            .comment("Множитель урона для сложной сложности")
-            .defineInRange("difficulty.damage.hard", 1.5, 0.0, 10.0);
+            .comment("Damage multiplier for hard difficulty")
+            .defineInRange("difficulty.damage.hard", 1.7, 0.0, 100.0);
 
-        // Создаем спецификацию
+        // Create specification
         SPEC = BUILDER.build();
     }
 
     /**
-     * Инициализация конфигурации:
-     * – Загружаются параметры измерений из файла dimensions.json (или создаётся дефолтный, если файла нет)
+     * Configuration initialization:
+     * - Loads dimension parameters from dimensions.json file (or creates default if file doesn't exist)
      */
     public static void init() {
-        // Инициализация конфигурации измерений
-        DIMENSIONS.putAll(DimensionConfigManager.getDefaultDimensionConfigs());
+        // Load dimension configuration
+        DimensionConfigManager.loadConfigs();
+        DIMENSIONS.putAll(DimensionConfigManager.getDimensionConfigs());
     }
 
     /**
-     * Регистрирует конфигурацию через Forge.
+     * Registers configuration through Forge.
      */
     public static void register(IEventBus eventBus) {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, SPEC);
     }
 
     /**
-     * Внутренний класс для управления параметрами измерений через внешний JSON-файл.
-     * Файл располагается по пути: config/mobscaler/dimensions.json
+     * Internal class for managing dimension parameters through external JSON file.
+     * File location: config/mobscaler/dimensions.json
      */
     public static class DimensionConfigManager {
         private static final Gson GSON = new Gson();
@@ -106,13 +107,13 @@ public class MobScalerConfig {
         private static Map<String, DimensionConfig> dimensionConfigs = new HashMap<>();
 
         /**
-         * Загружает конфигурацию измерений.
-         * Если файла не существует, создаёт его с дефолтными настройками.
-         * После загрузки дополнительно добавляет из реестра измерения, которых ещё нет в файле.
+         * Loads dimension configuration.
+         * If file doesn't exist, creates it with default settings.
+         * After loading, additionally adds dimensions from registry that aren't in the file yet.
          */
         public static void loadConfigs() {
             if (!Files.exists(CONFIG_PATH)) {
-                // Файл отсутствует – создать дефолтные настройки
+                // File doesn't exist – create default settings
                 dimensionConfigs = getDefaultDimensionConfigs();
                 saveConfigs();
             } else {
@@ -124,7 +125,7 @@ public class MobScalerConfig {
                     dimensionConfigs = getDefaultDimensionConfigs();
                 }
             }
-            // Добавляем измерения из реестра, если их нет в файле
+            // Add dimensions from registry if they aren't in the file yet
             addRegistryDimensions();
         }
 
@@ -133,7 +134,7 @@ public class MobScalerConfig {
         }
 
         /**
-         * Сохраняет конфигурацию измерений в файл.
+         * Saves dimension configuration to file.
          */
         public static void saveConfigs() {
             try {
@@ -151,38 +152,38 @@ public class MobScalerConfig {
         }
 
         /**
-         * Дефолтные настройки для стандартных измерений.
+         * Default settings for standard dimensions.
          */
         private static Map<String, DimensionConfig> getDefaultDimensionConfigs() {
             Map<String, DimensionConfig> defaults = new HashMap<>();
             defaults.put("minecraft:overworld", new DimensionConfig(
-                false, // enableNightScaling
-                // Дневные настройки
-                0.0, 1.0,  // health
-                0.0, 1.0,  // armor
-                0.0, 1.0,  // damage
-                0.0, 1.0,  // speed
+                true, // enableNightScaling
+                // Day settings
+                2.0, 1.2,  // health
+                1.0, 1.2,  // armor
+                1.0, 1.2,  // damage
+                0.0, 1.1,  // speed
                 0.0, 1.0,  // knockback resistance
                 0.0, 1.0,  // attack knockback
                 0.0, 1.0,  // attack speed
                 0.0, 1.0,  // follow range
                 0.0, 1.0,  // flying speed
-                // Ночные настройки
-                0.0, 1.0,  // night health
-                0.0, 1.0,  // night armor
-                0.0, 1.0,  // night damage
-                0.0, 1.0,  // night speed
+                // Night settings
+                4.0, 1.5,  // night health
+                2.0, 1.5,  // night armor
+                2.0, 1.5,  // night damage
+                0.0, 1.2,  // night speed
                 0.0, 1.0,  // night knockback resistance
                 0.0, 1.0,  // night attack knockback
                 0.0, 1.0,  // night attack speed
                 0.0, 1.0,  // night follow range
                 0.0, 1.0,  // night flying speed
-                Arrays.asList("examplemod"),
-                Arrays.asList("examplemobid")
+                new ArrayList<String>(),
+                new ArrayList<String>()
             ));
             defaults.put("minecraft:the_nether", new DimensionConfig(
                 false, // enableNightScaling
-                // Дневные настройки
+                // Day settings
                 5.0, 1.5,  // health
                 5.0, 1.5,  // armor
                 3.0, 1.5,  // damage
@@ -192,7 +193,7 @@ public class MobScalerConfig {
                 0.0, 1.0,  // attack speed
                 0.0, 1.0,  // follow range
                 0.0, 1.0,  // flying speed
-                // Ночные настройки
+                // Night settings
                 0.0, 1.0,  // night health
                 0.0, 1.0,  // night armor
                 0.0, 1.0,  // night damage
@@ -207,7 +208,7 @@ public class MobScalerConfig {
             ));
             defaults.put("minecraft:the_end", new DimensionConfig(
                 false, // enableNightScaling
-                // Дневные настройки
+                // Day settings
                 10.0, 2.0,  // health
                 10.0, 2.0,  // armor
                 5.0, 2.0,   // damage
@@ -217,7 +218,7 @@ public class MobScalerConfig {
                 0.0, 1.0,   // attack speed
                 0.0, 1.0,   // follow range
                 0.0, 1.0,   // flying speed
-                // Ночные настройки
+                // Night settings
                 0.0, 1.0,  // night health
                 0.0, 1.0,  // night armor
                 0.0, 1.0,  // night damage
@@ -234,8 +235,8 @@ public class MobScalerConfig {
         }
 
         /**
-         * Добавляет в конфигурацию измерения из реестра, которых ещё нет в файле.
-         * Эти измерения получат значения по умолчанию.
+         * Adds dimensions from registry to configuration that aren't in the file yet.
+         * These dimensions will get default values.
          */
         private static void addRegistryDimensions() {
             ForgeRegistry<DimensionType> dimRegistry = (ForgeRegistry<DimensionType>) RegistryManager.ACTIVE.getRegistry(Registry.DIMENSION_TYPE_REGISTRY);
@@ -245,7 +246,7 @@ public class MobScalerConfig {
                     if (!dimensionConfigs.containsKey(dimId)) {
                         dimensionConfigs.put(dimId, new DimensionConfig(
                             false, // enableNightScaling
-                            // Дневные настройки
+                            // Day settings
                             0.0, 1.0,  // health
                             0.0, 1.0,  // armor
                             0.0, 1.0,  // damage
@@ -255,7 +256,7 @@ public class MobScalerConfig {
                             0.0, 1.0,  // attack speed
                             0.0, 1.0,  // follow range
                             0.0, 1.0,  // flying speed
-                            // Ночные настройки
+                            // Night settings
                             0.0, 1.0,  // night health
                             0.0, 1.0,  // night armor
                             0.0, 1.0,  // night damage

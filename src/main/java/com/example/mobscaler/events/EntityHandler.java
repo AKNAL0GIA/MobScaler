@@ -15,17 +15,21 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.List;
 
 public class EntityHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EntityHandler.class);
     private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("a9c8745e-1234-5678-90ab-cdef12345678");
     private static final UUID ARMOR_MODIFIER_UUID = UUID.fromString("b8d7654f-4321-5678-90ab-cdef654321ba");
     private static final UUID DAMAGE_MODIFIER_UUID = UUID.fromString("c3d9f8a1-2468-1357-9abc-def456789012");
@@ -45,81 +49,16 @@ public class EntityHandler {
             Level world = event.getLevel();
             ResourceLocation dimensionId = world.dimension().location();
             String dimKey = dimensionId.toString();
+            boolean isNight = isNight(world);
+            
+            // Получаем множители сложности
+            double healthMultiplier = getDifficultyMultiplier(world.getDifficulty(), true);
+            double damageMultiplier = getDifficultyMultiplier(world.getDifficulty(), false);
             
             if (entity instanceof Player player) {
-                if (isPlayerBlocked(player, dimKey)) {
-                    return;
-                }
-                // Применяем модификаторы для игрока
-                PlayerModifiers playerMods = PlayerConfigManager.getPlayerConfig().getModifiersForDimension(dimKey);
-                boolean isNight = isNight(world);
-                if (isNight && playerMods.isNightScalingEnabled()) {
-                    applyNightModifiers(entity, playerMods, 1.0, 1.0);
-                } else {
-                    applyDayModifiers(entity, playerMods, 1.0, 1.0);
-                }
+                handlePlayerModifiers(player, dimKey, isNight);
             } else {
-                double healthMultiplier = getDifficultyMultiplier(world.getDifficulty(), true);
-                double damageMultiplier = getDifficultyMultiplier(world.getDifficulty(), false);
-                
-                // Проверяем пещерные усиления
-                CaveConfig caveConfig = CaveConfigManager.getCaveConfigs().get(dimKey);
-                if (caveConfig != null && caveConfig.isCaveModeEnabled()) {
-                    double entityY = entity.getY();
-                    double caveHeight = caveConfig.getCaveHeight();
-                    
-                    // Проверяем, находится ли сущность в пещере
-                    if (entityY <= caveHeight) {
-                        // Проверяем, не заблокирована ли сущность
-                        ResourceLocation entityId = EntityType.getKey(entity.getType());
-                        if (!isEntityBlocked(caveConfig, entityId)) {
-                            // Применяем пещерные модификаторы с учетом сложности
-                            applyCaveModifiers(entity, caveConfig, healthMultiplier, damageMultiplier);
-                            return; // Пропускаем обычные модификаторы
-                        }
-                    }
-                }
-                
-                // Применяем обычные модификаторы для мобов
-                DimensionConfig config = MobScalerConfig.DIMENSIONS.get(dimKey);
-                if (config == null) {
-                    config = new DimensionConfig(
-                        false, // enableNightScaling
-                        // Дневные настройки
-                        0.0, 1.0, // health
-                        0.0, 1.0, // armor
-                        0.0, 1.0, // damage
-                        0.0, 1.0, // speed
-                        0.0, 1.0, // knockback resistance
-                        0.0, 1.0, // attack knockback
-                        0.0, 1.0, // attack speed
-                        0.0, 1.0, // follow range
-                        0.0, 1.0, // flying speed
-                        // Ночные настройки
-                        0.0, 1.0, // night health
-                        0.0, 1.0, // night armor
-                        0.0, 1.0, // night damage
-                        0.0, 1.0, // night speed
-                        0.0, 1.0, // night knockback resistance
-                        0.0, 1.0, // night attack knockback
-                        0.0, 1.0, // night attack speed
-                        0.0, 1.0, // night follow range
-                        0.0, 1.0, // night flying speed
-                        new ArrayList<>(),
-                        new ArrayList<>()
-                    );
-                    MobScalerConfig.DIMENSIONS.put(dimKey, config);
-                }
-                
-                ResourceLocation entityId = EntityType.getKey(entity.getType());
-                if (isEntityBlocked(config, entityId)) return;
-                
-                boolean isNight = isNight(world);
-                if (isNight && config.isNightScalingEnabled()) {
-                    applyNightModifiers(entity, config, healthMultiplier, damageMultiplier);
-                } else {
-                    applyDayModifiers(entity, config, healthMultiplier, damageMultiplier);
-                }
+                handleMobModifiers(entity, world, dimKey, isNight, healthMultiplier, damageMultiplier);
             }
         }
     }
@@ -131,24 +70,36 @@ public class EntityHandler {
             ResourceLocation dimensionId = world.dimension().location();
             String dimKey = dimensionId.toString();
             
-            // Проверяем, изменилось ли состояние ночи
-            Boolean lastState = lastNightState.get(dimKey);
-            boolean currentState = isNight(world);
+            boolean isNight = isNight(world);
             
-            if (lastState != null && lastState != currentState) {
-                // Обновляем атрибуты игроков только при изменении состояния ночи
+            // Проверяем состояние ночи для каждого измерения
+            Boolean lastState = lastNightState.get(dimKey);
+            
+            // Если это первый тик или состояние изменилось
+            if (lastState == null || lastState != isNight) {
+                lastNightState.put(dimKey, isNight);
+                
+                // Обновляем модификаторы для всех игроков в мире
                 for (Player player : world.players()) {
-                    if (!isPlayerBlocked(player, dimKey)) {
-                        PlayerModifiers playerMods = PlayerConfigManager.getPlayerConfig().getModifiersForDimension(dimKey);
-                        if (currentState && playerMods.isNightScalingEnabled()) {
-                            applyNightModifiers(player, playerMods, 1.0, 1.0);
-                        } else {
-                            applyDayModifiers(player, playerMods, 1.0, 1.0);
-                        }
+                    handlePlayerModifiers(player, dimKey, isNight);
+                }
+                
+                // Обновляем модификаторы для мобов
+                double size = world.getWorldBorder().getSize() / 2;
+                Vec3 center = new Vec3(world.getWorldBorder().getCenterX(), world.getMaxBuildHeight() / 2.0, world.getWorldBorder().getCenterZ());
+                AABB worldBounds = new AABB(
+                    center.x - size, 0, center.z - size,
+                    center.x + size, world.getMaxBuildHeight(), center.z + size
+                );
+                
+                double healthMultiplier = getDifficultyMultiplier(world.getDifficulty(), true);
+                double damageMultiplier = getDifficultyMultiplier(world.getDifficulty(), false);
+                
+                for (LivingEntity entity : world.getEntitiesOfClass(LivingEntity.class, worldBounds)) {
+                    if (!(entity instanceof Player)) {
+                        handleMobModifiers(entity, world, dimKey, isNight, healthMultiplier, damageMultiplier);
                     }
                 }
-                // Обновляем состояние
-                lastNightState.put(dimKey, currentState);
             }
         }
     }
@@ -181,12 +132,12 @@ public class EntityHandler {
         return isModBlocked || isEntityBlocked;
     }
 
-    private static boolean isNight(Level world) {
+    public static boolean isNight(Level world) {
         long time = world.getDayTime();
         return time >= 13000 && time < 23000;
     }
 
-    private static double getDifficultyMultiplier(Difficulty difficulty, boolean isHealth) {
+    public static double getDifficultyMultiplier(Difficulty difficulty, boolean isHealth) {
         return switch (difficulty) {
             case PEACEFUL -> isHealth ? MobScalerConfig.HEALTH_PEACEFUL.get() : MobScalerConfig.DAMAGE_PEACEFUL.get();
             case EASY -> isHealth ? MobScalerConfig.HEALTH_EASY.get() : MobScalerConfig.DAMAGE_EASY.get();
@@ -195,32 +146,141 @@ public class EntityHandler {
         };
     }
 
-    private static void applyDayModifiers(LivingEntity entity, Object config, double healthMultiplier, double damageMultiplier) {
-        if (config instanceof DimensionConfig dimConfig) {
-            applyHealthModifier(entity, dimConfig.getHealthAddition(), dimConfig.getHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, dimConfig.getArmorAddition(), dimConfig.getArmorMultiplier(), healthMultiplier);
-            applyDamageModifier(entity, dimConfig.getDamageAddition(), dimConfig.getDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, dimConfig.getSpeedAddition(), dimConfig.getSpeedMultiplier(), damageMultiplier);
-            applyKnockbackResistanceModifier(entity, dimConfig.getKnockbackResistanceAddition(), dimConfig.getKnockbackResistanceMultiplier(), healthMultiplier);
-            applyAttackKnockbackModifier(entity, dimConfig.getAttackKnockbackAddition(), dimConfig.getAttackKnockbackMultiplier(), damageMultiplier);
-            applyAttackSpeedModifier(entity, dimConfig.getAttackSpeedAddition(), dimConfig.getAttackSpeedMultiplier(), damageMultiplier);
-            applyFollowRangeModifier(entity, dimConfig.getFollowRangeAddition(), dimConfig.getFollowRangeMultiplier(), damageMultiplier);
-            applyFlyingSpeedModifier(entity, dimConfig.getFlyingSpeedAddition(), dimConfig.getFlyingSpeedMultiplier(), damageMultiplier);
-        } else if (config instanceof PlayerModifiers playerMods) {
-            applyHealthModifier(entity, playerMods.getHealthAddition(), playerMods.getHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, playerMods.getArmorAddition(), playerMods.getArmorMultiplier(), healthMultiplier);
-            applyDamageModifier(entity, playerMods.getDamageAddition(), playerMods.getDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, playerMods.getSpeedAddition(), playerMods.getSpeedMultiplier(), damageMultiplier);
-            applyKnockbackResistanceModifier(entity, playerMods.getKnockbackResistanceAddition(), playerMods.getKnockbackResistanceMultiplier(), healthMultiplier);
-            applyAttackKnockbackModifier(entity, playerMods.getAttackKnockbackAddition(), playerMods.getAttackKnockbackMultiplier(), damageMultiplier);
-            applyAttackSpeedModifier(entity, playerMods.getAttackSpeedAddition(), playerMods.getAttackSpeedMultiplier(), damageMultiplier);
-            applyFollowRangeModifier(entity, playerMods.getFollowRangeAddition(), playerMods.getFollowRangeMultiplier(), damageMultiplier);
-            applyFlyingSpeedModifier(entity, playerMods.getFlyingSpeedAddition(), playerMods.getFlyingSpeedMultiplier(), damageMultiplier);
+    public static void handlePlayerModifiers(Player player, String dimKey, boolean isNight) {
+        LOGGER.debug("Handling player modifiers for {} in dimension {}, isNight: {}", 
+            player.getName().getString(), dimKey, isNight);
+            
+        if (isPlayerBlocked(player, dimKey)) {
+            LOGGER.debug("Player {} is blocked in dimension {}", player.getName().getString(), dimKey);
+            return;
+        }
+        
+        // Получаем модификаторы игрока
+        PlayerModifiers playerMods = PlayerConfigManager.getPlayerConfig().getModifiersForDimension(dimKey);
+        LOGGER.debug("Player modifiers: {}, Night scaling enabled: {}", 
+            playerMods != null, playerMods != null ? playerMods.isNightScalingEnabled() : false);
+            
+        if (playerMods == null) {
+            LOGGER.warn("No player modifiers found for dimension {}", dimKey);
+            return;
+        }
+        
+        // Удаляем все существующие модификаторы
+        removeAllModifiers(player);
+        
+        // Проверяем время суток и применяем соответствующие модификаторы
+        if (isNight) {
+            if (playerMods.isNightScalingEnabled()) {
+                LOGGER.debug("Applying night modifiers to player {}", player.getName().getString());
+                applyPlayerModifiers(player, playerMods, true);
+            } else {
+                LOGGER.debug("Night scaling disabled, applying day modifiers to player {}", player.getName().getString());
+                applyPlayerModifiers(player, playerMods, false);
+            }
+        } else {
+            LOGGER.debug("Applying day modifiers to player {}", player.getName().getString());
+            applyPlayerModifiers(player, playerMods, false);
         }
     }
 
-    private static void applyNightModifiers(LivingEntity entity, Object config, double healthMultiplier, double damageMultiplier) {
-        if (config instanceof DimensionConfig dimConfig) {
+    private static void applyPlayerModifiers(Player player, PlayerModifiers modifiers, boolean isNight) {
+        if (player == null || modifiers == null) return;
+
+        // Применяем модификаторы здоровья
+        applyHealthModifier(player, 
+            isNight ? modifiers.getNightHealthAddition() : modifiers.getHealthAddition(),
+            isNight ? modifiers.getNightHealthMultiplier() : modifiers.getHealthMultiplier(),
+            1.0);
+
+        // Применяем модификаторы брони
+        applyArmorModifier(player,
+            isNight ? modifiers.getNightArmorAddition() : modifiers.getArmorAddition(),
+            isNight ? modifiers.getNightArmorMultiplier() : modifiers.getArmorMultiplier(),
+            1.0);
+
+        // Применяем модификаторы урона
+        applyDamageModifier(player,
+            isNight ? modifiers.getNightDamageAddition() : modifiers.getDamageAddition(),
+            isNight ? modifiers.getNightDamageMultiplier() : modifiers.getDamageMultiplier(),
+            1.0);
+
+        // Применяем модификаторы скорости
+        applySpeedModifier(player,
+            isNight ? modifiers.getNightSpeedAddition() : modifiers.getSpeedAddition(),
+            isNight ? modifiers.getNightSpeedMultiplier() : modifiers.getSpeedMultiplier(),
+            1.0);
+
+        // Применяем модификаторы сопротивления отбрасыванию
+        applyKnockbackResistanceModifier(player,
+            isNight ? modifiers.getNightKnockbackResistanceAddition() : modifiers.getKnockbackResistanceAddition(),
+            isNight ? modifiers.getNightKnockbackResistanceMultiplier() : modifiers.getKnockbackResistanceMultiplier(),
+            1.0);
+
+        // Применяем модификаторы отбрасывания при атаке
+        applyAttackKnockbackModifier(player,
+            isNight ? modifiers.getNightAttackKnockbackAddition() : modifiers.getAttackKnockbackAddition(),
+            isNight ? modifiers.getNightAttackKnockbackMultiplier() : modifiers.getAttackKnockbackMultiplier(),
+            1.0);
+
+        // Применяем модификаторы скорости атаки
+        applyAttackSpeedModifier(player,
+            isNight ? modifiers.getNightAttackSpeedAddition() : modifiers.getAttackSpeedAddition(),
+            isNight ? modifiers.getNightAttackSpeedMultiplier() : modifiers.getAttackSpeedMultiplier(),
+            1.0);
+
+        // Применяем модификаторы дальности следования
+        applyFollowRangeModifier(player,
+            isNight ? modifiers.getNightFollowRangeAddition() : modifiers.getFollowRangeAddition(),
+            isNight ? modifiers.getNightFollowRangeMultiplier() : modifiers.getFollowRangeMultiplier(),
+            1.0);
+
+        // Применяем модификаторы скорости полета
+        applyFlyingSpeedModifier(player,
+            isNight ? modifiers.getNightFlyingSpeedAddition() : modifiers.getFlyingSpeedAddition(),
+            isNight ? modifiers.getNightFlyingSpeedMultiplier() : modifiers.getFlyingSpeedMultiplier(),
+            1.0);
+    }
+
+    public static void handleMobModifiers(LivingEntity entity, Level world, String dimKey, boolean isNight, double healthMultiplier, double damageMultiplier) {
+        ResourceLocation entityId = EntityType.getKey(entity.getType());
+        
+        // Получаем конфигурацию измерения
+        DimensionConfig dimConfig = MobScalerConfig.DIMENSIONS.get(dimKey);
+        
+        if (dimConfig == null) {
+            return;
+        }
+
+        // Проверяем черный список для измерения
+        if (isEntityBlocked(dimConfig, entityId)) {
+            return;
+        }
+
+        // Получаем пещерную конфигурацию
+        CaveConfig caveConfig = CaveConfigManager.getCaveConfigs().get(dimKey);
+        boolean isCaveModeEnabled = caveConfig != null && caveConfig.isCaveModeEnabled();
+
+        // Удаляем все существующие модификаторы ПОСЛЕ всех проверок
+        removeAllModifiers(entity);
+
+        // Проверяем, находится ли моб в пещере
+        if (isCaveModeEnabled) {
+            double entityY = entity.getY();
+            double caveHeight = caveConfig.getCaveHeight();
+
+            if (entityY <= caveHeight && !isEntityBlocked(caveConfig, entityId)) {
+                applyCaveModifiers(entity, caveConfig, healthMultiplier, damageMultiplier);
+                return;
+            }
+        }
+
+        // Применяем модификаторы измерения
+        applyDimensionModifiers(entity, dimConfig, isNight, healthMultiplier, damageMultiplier);
+    }
+
+    private static void applyDimensionModifiers(LivingEntity entity, DimensionConfig dimConfig, boolean isNight, double healthMultiplier, double damageMultiplier) {
+        if (isNight && dimConfig.isNightScalingEnabled()) {
+            // Применяем ночные модификаторы
             applyHealthModifier(entity, dimConfig.getNightHealthAddition(), dimConfig.getNightHealthMultiplier(), healthMultiplier);
             applyArmorModifier(entity, dimConfig.getNightArmorAddition(), dimConfig.getNightArmorMultiplier(), healthMultiplier);
             applyDamageModifier(entity, dimConfig.getNightDamageAddition(), dimConfig.getNightDamageMultiplier(), damageMultiplier);
@@ -230,16 +290,17 @@ public class EntityHandler {
             applyAttackSpeedModifier(entity, dimConfig.getNightAttackSpeedAddition(), dimConfig.getNightAttackSpeedMultiplier(), damageMultiplier);
             applyFollowRangeModifier(entity, dimConfig.getNightFollowRangeAddition(), dimConfig.getNightFollowRangeMultiplier(), damageMultiplier);
             applyFlyingSpeedModifier(entity, dimConfig.getNightFlyingSpeedAddition(), dimConfig.getNightFlyingSpeedMultiplier(), damageMultiplier);
-        } else if (config instanceof PlayerModifiers playerMods) {
-            applyHealthModifier(entity, playerMods.getNightHealthAddition(), playerMods.getNightHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, playerMods.getNightArmorAddition(), playerMods.getNightArmorMultiplier(), healthMultiplier);
-            applyDamageModifier(entity, playerMods.getNightDamageAddition(), playerMods.getNightDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, playerMods.getNightSpeedAddition(), playerMods.getNightSpeedMultiplier(), damageMultiplier);
-            applyKnockbackResistanceModifier(entity, playerMods.getNightKnockbackResistanceAddition(), playerMods.getNightKnockbackResistanceMultiplier(), healthMultiplier);
-            applyAttackKnockbackModifier(entity, playerMods.getNightAttackKnockbackAddition(), playerMods.getNightAttackKnockbackMultiplier(), damageMultiplier);
-            applyAttackSpeedModifier(entity, playerMods.getNightAttackSpeedAddition(), playerMods.getNightAttackSpeedMultiplier(), damageMultiplier);
-            applyFollowRangeModifier(entity, playerMods.getNightFollowRangeAddition(), playerMods.getNightFollowRangeMultiplier(), damageMultiplier);
-            applyFlyingSpeedModifier(entity, playerMods.getNightFlyingSpeedAddition(), playerMods.getNightFlyingSpeedMultiplier(), damageMultiplier);
+        } else {
+            // Применяем дневные модификаторы напрямую
+            applyHealthModifier(entity, dimConfig.getHealthAddition(), dimConfig.getHealthMultiplier(), healthMultiplier);
+            applyArmorModifier(entity, dimConfig.getArmorAddition(), dimConfig.getArmorMultiplier(), healthMultiplier);
+            applyDamageModifier(entity, dimConfig.getDamageAddition(), dimConfig.getDamageMultiplier(), damageMultiplier);
+            applySpeedModifier(entity, dimConfig.getSpeedAddition(), dimConfig.getSpeedMultiplier(), damageMultiplier);
+            applyKnockbackResistanceModifier(entity, dimConfig.getKnockbackResistanceAddition(), dimConfig.getKnockbackResistanceMultiplier(), healthMultiplier);
+            applyAttackKnockbackModifier(entity, dimConfig.getAttackKnockbackAddition(), dimConfig.getAttackKnockbackMultiplier(), damageMultiplier);
+            applyAttackSpeedModifier(entity, dimConfig.getAttackSpeedAddition(), dimConfig.getAttackSpeedMultiplier(), damageMultiplier);
+            applyFollowRangeModifier(entity, dimConfig.getFollowRangeAddition(), dimConfig.getFollowRangeMultiplier(), damageMultiplier);
+            applyFlyingSpeedModifier(entity, dimConfig.getFlyingSpeedAddition(), dimConfig.getFlyingSpeedMultiplier(), damageMultiplier);
         }
     }
 
@@ -248,6 +309,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newMax = (base + addition) * multiplier * difficultyMultiplier;
+            LOGGER.debug("Health: base={}, addition={}, multiplier={}, difficulty={}, new={}", 
+                base, addition, multiplier, difficultyMultiplier, newMax);
             if (attr.getModifier(HEALTH_MODIFIER_UUID) != null) {
                 attr.removeModifier(HEALTH_MODIFIER_UUID);
             }
@@ -357,15 +420,34 @@ public class EntityHandler {
     }
 
     private static void applyCaveModifiers(LivingEntity entity, CaveConfig config, double healthMultiplier, double damageMultiplier) {
-        // Применяем усиленные модификаторы для пещер
-        applyHealthModifier(entity, config.getHealthAddition(), config.getHealthMultiplier() * 1.5, healthMultiplier);
-        applyArmorModifier(entity, config.getArmorAddition(), config.getArmorMultiplier() * 1.5, healthMultiplier);
-        applyDamageModifier(entity, config.getDamageAddition(), config.getDamageMultiplier() * 1.5, damageMultiplier);
+        // Убираем повторное удаление модификаторов
+        applyHealthModifier(entity, config.getHealthAddition(), config.getHealthMultiplier(), healthMultiplier);
+        applyArmorModifier(entity, config.getArmorAddition(), config.getArmorMultiplier(), healthMultiplier);
+        applyDamageModifier(entity, config.getDamageAddition(), config.getDamageMultiplier(), damageMultiplier);
         applySpeedModifier(entity, config.getSpeedAddition(), config.getSpeedMultiplier(), damageMultiplier);
         applyKnockbackResistanceModifier(entity, config.getKnockbackResistanceAddition(), config.getKnockbackResistanceMultiplier(), healthMultiplier);
         applyAttackKnockbackModifier(entity, config.getAttackKnockbackAddition(), config.getAttackKnockbackMultiplier(), damageMultiplier);
         applyAttackSpeedModifier(entity, config.getAttackSpeedAddition(), config.getAttackSpeedMultiplier(), damageMultiplier);
         applyFollowRangeModifier(entity, config.getFollowRangeAddition(), config.getFollowRangeMultiplier(), damageMultiplier);
         applyFlyingSpeedModifier(entity, config.getFlyingSpeedAddition(), config.getFlyingSpeedMultiplier(), damageMultiplier);
+    }
+
+    private static void removeAllModifiers(LivingEntity entity) {
+        removeModifier(entity, Attributes.MAX_HEALTH, HEALTH_MODIFIER_UUID);
+        removeModifier(entity, Attributes.ARMOR, ARMOR_MODIFIER_UUID);
+        removeModifier(entity, Attributes.ATTACK_DAMAGE, DAMAGE_MODIFIER_UUID);
+        removeModifier(entity, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER_UUID);
+        removeModifier(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE_UUID);
+        removeModifier(entity, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_UUID);
+        removeModifier(entity, Attributes.ATTACK_SPEED, ATTACK_SPEED_UUID);
+        removeModifier(entity, Attributes.FOLLOW_RANGE, FOLLOW_RANGE_UUID);
+        removeModifier(entity, Attributes.FLYING_SPEED, FLYING_SPEED_UUID);
+    }
+
+    private static void removeModifier(LivingEntity entity, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID modifierId) {
+        AttributeInstance attr = entity.getAttribute(attribute);
+        if (attr != null && attr.getModifier(modifierId) != null) {
+            attr.removeModifier(modifierId);
+        }
     }
 }
