@@ -12,75 +12,81 @@ import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
+import net.minecraftforge.fml.common.Mod;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.*;
 import java.util.*;
 
+@Mod.EventBusSubscriber
 public class MobScalerConfig {
-    private static ForgeConfigSpec.Builder BUILDER;
-    public static ForgeConfigSpec SPEC;
+    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+    public static final ForgeConfigSpec SPEC;
 
-    // Глобальные настройки сложности (через ForgeConfigSpec)
-    public static ForgeConfigSpec.ConfigValue<Double> HEALTH_PEACEFUL;
-    public static ForgeConfigSpec.ConfigValue<Double> HEALTH_EASY;
-    public static ForgeConfigSpec.ConfigValue<Double> HEALTH_NORMAL;
-    public static ForgeConfigSpec.ConfigValue<Double> HEALTH_HARD;
+    // Множители сложности для здоровья
+    public static final DoubleValue HEALTH_PEACEFUL;
+    public static final DoubleValue HEALTH_EASY;
+    public static final DoubleValue HEALTH_NORMAL;
+    public static final DoubleValue HEALTH_HARD;
 
-    public static ForgeConfigSpec.ConfigValue<Double> DAMAGE_PEACEFUL;
-    public static ForgeConfigSpec.ConfigValue<Double> DAMAGE_EASY;
-    public static ForgeConfigSpec.ConfigValue<Double> DAMAGE_NORMAL;
-    public static ForgeConfigSpec.ConfigValue<Double> DAMAGE_HARD;
+    // Множители сложности для урона
+    public static final DoubleValue DAMAGE_PEACEFUL;
+    public static final DoubleValue DAMAGE_EASY;
+    public static final DoubleValue DAMAGE_NORMAL;
+    public static final DoubleValue DAMAGE_HARD;
 
-    // Карта измерений, параметры которых загружаются из внешнего JSON-файла
+    // Настройки для измерений
     public static final Map<String, DimensionConfig> DIMENSIONS = new HashMap<>();
+
+    static {
+        // Инициализация множителей сложности
+        HEALTH_PEACEFUL = BUILDER
+            .comment("Множитель здоровья для мирной сложности")
+            .defineInRange("difficulty.health.peaceful", 0.5, 0.0, 10.0);
+
+        HEALTH_EASY = BUILDER
+            .comment("Множитель здоровья для легкой сложности")
+            .defineInRange("difficulty.health.easy", 0.75, 0.0, 10.0);
+
+        HEALTH_NORMAL = BUILDER
+            .comment("Множитель здоровья для нормальной сложности")
+            .defineInRange("difficulty.health.normal", 1.0, 0.0, 10.0);
+
+        HEALTH_HARD = BUILDER
+            .comment("Множитель здоровья для сложной сложности")
+            .defineInRange("difficulty.health.hard", 1.5, 0.0, 10.0);
+
+        DAMAGE_PEACEFUL = BUILDER
+            .comment("Множитель урона для мирной сложности")
+            .defineInRange("difficulty.damage.peaceful", 0.5, 0.0, 10.0);
+
+        DAMAGE_EASY = BUILDER
+            .comment("Множитель урона для легкой сложности")
+            .defineInRange("difficulty.damage.easy", 0.75, 0.0, 10.0);
+
+        DAMAGE_NORMAL = BUILDER
+            .comment("Множитель урона для нормальной сложности")
+            .defineInRange("difficulty.damage.normal", 1.0, 0.0, 10.0);
+
+        DAMAGE_HARD = BUILDER
+            .comment("Множитель урона для сложной сложности")
+            .defineInRange("difficulty.damage.hard", 1.5, 0.0, 10.0);
+
+        // Создаем спецификацию
+        SPEC = BUILDER.build();
+    }
 
     /**
      * Инициализация конфигурации:
-     * – Строятся глобальные настройки сложности
      * – Загружаются параметры измерений из файла dimensions.json (или создаётся дефолтный, если файла нет)
      */
     public static void init() {
-        BUILDER = new ForgeConfigSpec.Builder();
-        setupDifficultyConfig();
-        SPEC = BUILDER.build();
-
-        // Загрузить/создать внешний файл с параметрами измерений
-        DimensionConfigManager.loadConfigs();
-        DIMENSIONS.putAll(DimensionConfigManager.getDimensionConfigs());
-    }
-
-    private static void setupDifficultyConfig() {
-        BUILDER.push("difficulty");
-
-        HEALTH_PEACEFUL = BUILDER
-            .comment("Health multiplier for Peaceful difficulty")
-            .defineInRange("health_peaceful", 0.8, 0.1, 10.0);
-
-        HEALTH_EASY = BUILDER
-            .defineInRange("health_easy", 1.0, 0.1, 10.0);
-
-        HEALTH_NORMAL = BUILDER
-            .defineInRange("health_normal", 1.2, 0.1, 10.0);
-
-        HEALTH_HARD = BUILDER
-            .defineInRange("health_hard", 1.5, 0.1, 10.0);
-
-        DAMAGE_PEACEFUL = BUILDER
-            .comment("Damage multiplier for Peaceful difficulty")
-            .defineInRange("damage_peaceful", 0.7, 0.1, 10.0);
-
-        DAMAGE_EASY = BUILDER
-            .defineInRange("damage_easy", 1.0, 0.1, 10.0);
-
-        DAMAGE_NORMAL = BUILDER
-            .defineInRange("damage_normal", 1.2, 0.1, 10.0);
-
-        DAMAGE_HARD = BUILDER
-            .defineInRange("damage_hard", 1.5, 0.1, 10.0);
-
-        BUILDER.pop();
+        // Инициализация конфигурации измерений
+        DIMENSIONS.putAll(DimensionConfigManager.getDefaultDimensionConfigs());
     }
 
     /**
@@ -232,7 +238,6 @@ public class MobScalerConfig {
          * Эти измерения получат значения по умолчанию.
          */
         private static void addRegistryDimensions() {
-            @SuppressWarnings("unchecked")
             ForgeRegistry<DimensionType> dimRegistry = (ForgeRegistry<DimensionType>) RegistryManager.ACTIVE.getRegistry(Registry.DIMENSION_TYPE_REGISTRY);
             if (dimRegistry != null) {
                 for (ResourceLocation id : dimRegistry.getKeys()) {

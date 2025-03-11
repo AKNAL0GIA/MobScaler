@@ -16,6 +16,11 @@ Features:
 • Player-specific modifiers
 • Blacklist system for mods and entities
 • Separate player and mob configurations
+• Cave enhancement system:
+  - Configurable cave height threshold
+  - Enhanced mob attributes in caves
+  - Separate blacklist for cave mobs
+  - Difficulty-based cave scaling
 
 Configure mob and player attributes in config/mobscaler/
 '''

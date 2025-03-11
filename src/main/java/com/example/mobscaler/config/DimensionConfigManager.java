@@ -95,7 +95,7 @@ public class DimensionConfigManager {
              0.0, 1.0,  // night follow range
              0.0, 1.0,  // night flying speed
              Arrays.asList("examplemod"),
-             Arrays.asList("examplemobid")
+             Arrays.asList("examplemod:mobid")
          ));
          defaults.put("minecraft:the_nether", new DimensionConfig(
              false, // enableNightScaling

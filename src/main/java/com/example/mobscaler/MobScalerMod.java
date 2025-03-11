@@ -2,6 +2,8 @@ package com.example.mobscaler;
 
 import com.example.mobscaler.config.MobScalerConfig;
 import com.example.mobscaler.config.PlayerConfigManager;
+import com.example.mobscaler.config.DimensionConfigManager;
+import com.example.mobscaler.config.CaveConfigManager;
 import com.example.mobscaler.events.EntityHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -10,6 +12,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.ModLoadingContext;
 
 @Mod(MobScalerMod.MODID)
 public class MobScalerMod {
@@ -17,27 +21,27 @@ public class MobScalerMod {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public MobScalerMod() {
-        // Инициализируем конфигурацию сразу, чтобы spec был построен до регистрации обработчиков
-        MobScalerConfig.init();
-        // Загружаем конфигурацию игроков
-        PlayerConfigManager.loadConfigs();
-        
-        @SuppressWarnings("removal")
+        // Регистрируем конфигурацию
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, MobScalerConfig.SPEC, "mobscaler-common.toml");
+
+        // Регистрируем обработчик событий
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        // Регистрируем конфигурацию через модовый EventBus
-        MobScalerConfig.register(modEventBus);
-        
-        // Добавляем слушателя на commonSetup, если потребуется дополнительная инициализация
         modEventBus.addListener(this::commonSetup);
 
-        // Регистрация событий Forge
-        MinecraftForge.EVENT_BUS.register(this);
-        // Регистрация обработчика событий EntityHandler
+        // Регистрируем обработчик событий сущностей
         MinecraftForge.EVENT_BUS.register(EntityHandler.class);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("HELLO FROM INIT");
-        LOGGER.info("Мод id: {}", MODID);
+        LOGGER.info("Initializing MobScaler Mod");
+        LOGGER.info("Mod ID: " + MODID);
+        
+        // Загружаем конфигурации
+        MobScalerConfig.init();
+        DimensionConfigManager.loadConfigs();
+        PlayerConfigManager.loadConfigs();
+        CaveConfigManager.loadConfigs();
+        
+        LOGGER.info("MobScaler configurations loaded successfully");
     }
 }
