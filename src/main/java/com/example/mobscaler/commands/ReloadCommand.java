@@ -83,7 +83,7 @@ public class ReloadCommand {
                 .append(Component.literal(" configuration reloaded "))
                 .append(Component.literal("successfully!").withStyle(ChatFormatting.GREEN));
                 
-            context.getSource().sendSuccess(message, true);
+            context.getSource().sendSuccess(() -> message, true);
             
         } catch (Exception e) {
             // Send error message with colored text

@@ -243,6 +243,7 @@ public class DimensionConfigManager {
         return configs;
     }
 
+    @SuppressWarnings("removal")
     private static void addRegistryDimensions() {
         ForgeRegistry<?> dimRegistry = RegistryManager.ACTIVE.getRegistry(new ResourceLocation("minecraft:dimension_type"));
         if (dimRegistry != null) {
