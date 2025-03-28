@@ -10,7 +10,6 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.RegistryManager;
 import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.Registry;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
 import net.minecraftforge.fml.common.Mod;
@@ -323,7 +322,7 @@ public class MobScalerConfig {
          * These dimensions will get default values.
          */
         private static void addRegistryDimensions() {
-            ForgeRegistry<DimensionType> dimRegistry = (ForgeRegistry<DimensionType>) RegistryManager.ACTIVE.getRegistry(Registry.DIMENSION_TYPE_REGISTRY);
+            ForgeRegistry<DimensionType> dimRegistry = (ForgeRegistry<DimensionType>) RegistryManager.ACTIVE.getRegistry(net.minecraft.core.registries.Registries.DIMENSION_TYPE);
             if (dimRegistry != null) {
                 for (ResourceLocation id : dimRegistry.getKeys()) {
                     String dimId = id.toString();

@@ -44,7 +44,7 @@ public class IndividualMobManager {
         ResourceLocation entityId = EntityType.getKey(entity.getType());
         String entityIdStr = entityId.toString();
         String modId = entityId.getNamespace();
-        Level level = entity.level;
+        Level level = entity.level();
         
         
         // Проверяем наличие индивидуальных настроек

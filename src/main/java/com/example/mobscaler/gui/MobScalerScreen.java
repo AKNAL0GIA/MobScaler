@@ -39,7 +39,9 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.ChatFormatting;
-
+import net.minecraft.client.gui.GuiGraphics;
+import org.joml.Vector3f;
+import org.joml.Quaternionf;
 
 public class MobScalerScreen extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MobScalerScreen.class);
@@ -113,20 +115,22 @@ public class MobScalerScreen extends Screen {
         private final int hoverColor;
         
         public StyledButton(int x, int y, int width, int height, Component message, OnPress onPress, int defaultColor, int hoverColor) {
-            super(x, y, width, height, message, onPress);
+            super(net.minecraft.client.gui.components.Button.builder(message, onPress)
+                .pos(x, y)
+                .size(width, height));
             this.defaultColor = defaultColor;
             this.hoverColor = hoverColor;
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             if (defaultColor != 0x00000000) {
                 int color = isHovered ? hoverColor : defaultColor;
-                fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, color);
+                guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, color);
             }
             int textWidth = Minecraft.getInstance().font.width(this.getMessage());
-            int textX = this.x + (this.width - textWidth) / 2;
-            drawString(poseStack, Minecraft.getInstance().font, this.getMessage(), textX, this.y + (this.height - 8) / 2, TEXT_COLOR);
+            int textX = this.getX() + (this.width - textWidth) / 2;
+            guiGraphics.drawString(Minecraft.getInstance().font, this.getMessage(), textX, this.getY() + (this.height - 8) / 2, TEXT_COLOR);
         }
     }
     
@@ -170,7 +174,9 @@ public class MobScalerScreen extends Screen {
         private final Component label;
         
         public CheckBox(int x, int y, int width, int height, Component label, boolean initialState, OnPress onPress) {
-            super(x, y, width, height, Component.literal(""), onPress);
+            super(net.minecraft.client.gui.components.Button.builder(label, onPress)
+                .pos(x, y)
+                .size(width, height));
             this.label = label;
             this.checked = initialState;
         }
@@ -184,12 +190,12 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            fill(poseStack, this.x, this.y, this.x + 10, this.y + 10, isHovered ? CHECKBOX_UNCHECKED_COLOR : 0xFF888888);
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + 10, this.getY() + 10, isHovered ? CHECKBOX_UNCHECKED_COLOR : 0xFF888888);
             if (checked) {
-                fill(poseStack, this.x + 2, this.y + 2, this.x + 8, this.y + 8, CHECKBOX_CHECKED_COLOR);
+                guiGraphics.fill(this.getX() + 2, this.getY() + 2, this.getX() + 8, this.getY() + 8, CHECKBOX_CHECKED_COLOR);
             }
-            drawString(poseStack, Minecraft.getInstance().font, label, this.x + 15, this.y + 2, TEXT_COLOR);
+            guiGraphics.drawString(Minecraft.getInstance().font, label, this.getX() + 15, this.getY() + 2, TEXT_COLOR);
         }
         
         @Override
@@ -212,7 +218,7 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput narrationElementOutput) {
+        public void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput narrationElementOutput) {
             defaultButtonNarrationText(narrationElementOutput);
         }
 
@@ -222,7 +228,7 @@ public class MobScalerScreen extends Screen {
         }
 
         private void updateButtonPositions() {
-            int currentY = y - (int)scrollAmount;
+            int currentY = this.getY() - (int)scrollAmount;
             for (int i = 0; i < buttons.size(); i++) {
                 Button button = buttons.get(i);
                 
@@ -231,14 +237,14 @@ public class MobScalerScreen extends Screen {
                 
                 if (isModButton) {
                     // Кнопка мода
-                    button.x = x;
-                    button.y = currentY;
+                    button.setX(this.getX());
+                    button.setY(currentY);
                     
                     // Если есть соответствующая кнопка удаления
                     if (i + 1 < buttons.size()) {
                         Button deleteButton = buttons.get(i + 1);
-                        deleteButton.x = x + 175 + 5;
-                        deleteButton.y = currentY;
+                        deleteButton.setX(this.getX() + 175 + 5);
+                        deleteButton.setY(currentY);
                     }
                     
                     currentY += BUTTON_HEIGHT;
@@ -247,21 +253,21 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             // Отрисовка фона панели
-            fill(poseStack, x, y, x + width, y + height, 0x80000000);
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x80000000);
 
             // Настраиваем область отсечения
             double scale = Minecraft.getInstance().getWindow().getGuiScale();
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor((int)(x * scale), (int)((Minecraft.getInstance().getWindow().getHeight() - (y + height) * scale)),
-                          (int)(width * scale), (int)(height * scale));
+            GL11.glScissor((int)(this.getX() * scale), (int)((Minecraft.getInstance().getWindow().getHeight() - (this.getY() + this.getHeight()) * scale)),
+                          (int)(this.getWidth() * scale), (int)(this.getHeight() * scale));
 
             // Отрисовка кнопок
             for (Button button : buttons) {
-                if (button.y + BUTTON_HEIGHT >= y && button.y <= y + height) {
+                if (button.getY() + BUTTON_HEIGHT >= this.getY() && button.getY() <= this.getY() + this.getHeight()) {
                     // Корректируем позицию мыши для правильного определения наведения
-                    button.render(poseStack, mouseX, mouseY, partialTick);
+                    button.render(guiGraphics, mouseX, mouseY, partialTick);
                 }
             }
 
@@ -269,10 +275,10 @@ public class MobScalerScreen extends Screen {
             if ((buttons.size() / 2) * BUTTON_HEIGHT > height) {
                 double contentHeight = (buttons.size() / 2) * BUTTON_HEIGHT;
                 double scrollBarHeight = height * (height / contentHeight);
-                double scrollBarY = y + (scrollAmount / contentHeight) * (height - scrollBarHeight);
+                double scrollBarY = this.getY() + (scrollAmount / contentHeight) * (height - scrollBarHeight);
                 
-                fill(poseStack, x + width - SCROLLBAR_WIDTH, y, x + width, y + height, 0x40000000);
-                fill(poseStack, x + width - SCROLLBAR_WIDTH, (int)scrollBarY, x + width, 
+                guiGraphics.fill(this.getX() + this.getWidth() - SCROLLBAR_WIDTH, this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x40000000);
+                guiGraphics.fill(this.getX() + this.getWidth() - SCROLLBAR_WIDTH, (int)scrollBarY, this.getX() + this.getWidth(), 
                      (int)(scrollBarY + scrollBarHeight), 0x80FFFFFF);
             }
 
@@ -283,7 +289,7 @@ public class MobScalerScreen extends Screen {
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (isMouseOver(mouseX, mouseY)) {
                 // Проверяем клик на полосе прокрутки
-                if (mouseX >= x + width - SCROLLBAR_WIDTH && mouseX <= x + width) {
+                if (mouseX >= this.getX() + this.getWidth() - SCROLLBAR_WIDTH && mouseX <= this.getX() + this.getWidth()) {
                     isDragging = true;
                     return true;
                 }
@@ -291,8 +297,8 @@ public class MobScalerScreen extends Screen {
                 // Проверяем клики по кнопкам с учетом прокрутки
                 double adjustedMouseY = mouseY + scrollAmount;
                 for (Button b : buttons) {
-                    if (mouseX >= b.x && mouseX <= b.x + b.getWidth() &&
-                        adjustedMouseY >= b.y + scrollAmount && adjustedMouseY <= b.y + b.getHeight() + scrollAmount) {
+                    if (mouseX >= b.getX() && mouseX <= b.getX() + b.getWidth() &&
+                        adjustedMouseY >= b.getY() + scrollAmount && adjustedMouseY <= b.getY() + b.getHeight() + scrollAmount) {
                         return b.mouseClicked(mouseX, mouseY, button);
                     }
                 }
@@ -312,12 +318,12 @@ public class MobScalerScreen extends Screen {
         public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
             if (isDragging) {
                 // Проверяем, находится ли курсор над полосой прокрутки
-                if (mouseX >= x + width - SCROLLBAR_WIDTH && mouseX <= x + width) {
+                if (mouseX >= this.getX() + this.getWidth() - SCROLLBAR_WIDTH && mouseX <= this.getX() + this.getWidth()) {
                     double contentHeight = (buttons.size() / 2) * BUTTON_HEIGHT;
                     double maxScroll = Math.max(0, contentHeight - height);
                     
                     // Вычисляем новую позицию прокрутки на основе позиции курсора
-                    double mouseRelativeY = mouseY - y;
+                    double mouseRelativeY = mouseY - this.getY();
                     double scrollPercentage = mouseRelativeY / height;
                     scrollAmount = maxScroll * scrollPercentage;
                     
@@ -752,16 +758,16 @@ public class MobScalerScreen extends Screen {
             this.isCenter = isCenter;
         }
         
-        public void render(PoseStack poseStack, Font font) {
+        public void render(GuiGraphics guiGraphics, Font font) {
             Component textComponent = Component.literal(text);
             if (isBold) {
                 textComponent = textComponent.copy().withStyle(ChatFormatting.BOLD);
             }
             
             if (isCenter) {
-                font.drawShadow(poseStack, textComponent, Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - font.width(textComponent) / 2, y, color);
+                guiGraphics.drawString(font, textComponent, Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - font.width(textComponent) / 2, y, color);
             } else {
-                font.drawShadow(poseStack, textComponent, x, y, color);
+                guiGraphics.drawString(font, textComponent, x, y, color);
             }
         }
     }
@@ -934,10 +940,11 @@ public class MobScalerScreen extends Screen {
                 0xFFFF5555
             ) {
                 @Override
-                public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+                public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                    PoseStack poseStack = guiGraphics.pose();
                     poseStack.pushPose();
-                    poseStack.translate(0, 0, 500.0F); // Увеличиваем Z-координату значительно выше, чем у сущности (200 -> 500)
-                    super.render(poseStack, mouseX, mouseY, partialTick);
+                    poseStack.translate(0, 0, 500.0F);
+                    super.render(guiGraphics, mouseX, mouseY, partialTick);
                     poseStack.popPose();
                 }
             };
@@ -979,8 +986,11 @@ public class MobScalerScreen extends Screen {
         private net.minecraft.world.entity.EntityType<?> entityType;
         private String displayName;
         
+        @SuppressWarnings("removal")
         public EntityIconButton(int x, int y, int width, int height, Component title, OnPress pressedAction, String entityId) {
-            super(x, y, width, height, title, pressedAction);
+            super(net.minecraft.client.gui.components.Button.builder(title, pressedAction)
+                .pos(x, y)
+                .size(width, height));
             this.entityId = entityId;
             try {
                 // Получаем тип сущности из регистра
@@ -999,9 +1009,9 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             // Рисуем фон кнопки
-            fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, 
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 
                  this.isHovered ? 0x80FFFFFF : 0x80000000);
             
             // Рисуем иконку сущности
@@ -1016,11 +1026,11 @@ public class MobScalerScreen extends Screen {
                         float maxDimension = Math.max(entityWidth, entityHeight);
                         float scale = (this.height * 0.8f) / maxDimension;
                         
-                        poseStack.pushPose();
+                        guiGraphics.pose().pushPose();
                         
                         // Центр кнопки
-                        float centerX = this.x + this.width/2;
-                        float centerY = this.y + this.height/2;
+                        float centerX = this.getX() + this.getWidth()/2;
+                        float centerY = this.getY() + this.getHeight()/2;
                         
                         // Вычисляем углы поворота на основе позиции курсора
                         float deltaX = mouseX - centerX;
@@ -1056,23 +1066,23 @@ public class MobScalerScreen extends Screen {
                         pitch = Math.max(-maxPitchDelta, Math.min(maxPitchDelta, pitch));
                         
                         // Применяем трансформации
-                        poseStack.translate(centerX, centerY, 200);
-                        poseStack.scale(scale, scale, scale);
+                        guiGraphics.pose().translate(centerX, centerY, 200);
+                        guiGraphics.pose().scale(scale, scale, scale);
                         // Поворачиваем сущность на 180 градусов вокруг оси X чтобы исправить перевернутость
-                        poseStack.mulPose(com.mojang.math.Vector3f.XP.rotationDegrees(180.0F));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateX((float) Math.toRadians(180.0F)));
                         // Применяем поворот по горизонтали (yaw)
-                        poseStack.mulPose(com.mojang.math.Vector3f.YP.rotationDegrees(180.0F + yaw));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateY((float) Math.toRadians(180.0F + yaw)));
                         // Применяем наклон по вертикали (pitch)
-                        poseStack.mulPose(com.mojang.math.Vector3f.XP.rotationDegrees(pitch));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateX((float) Math.toRadians(pitch)));
                         
                         // Отрисовываем сущность
                         Minecraft.getInstance().getEntityRenderDispatcher().render(
-                            entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTick, poseStack,
+                            entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTick, guiGraphics.pose(),
                             Minecraft.getInstance().renderBuffers().bufferSource(),
                             15728880
                         );
                         
-                        poseStack.popPose();
+                        guiGraphics.pose().popPose();
                         
                         // Очищаем буфер рендера
                         Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
@@ -1084,11 +1094,11 @@ public class MobScalerScreen extends Screen {
             
             // Если курсор наведен, показываем всплывающую подсказку
             if (this.isHovered) {
-                renderTooltip(poseStack, mouseX, mouseY);
+                renderTooltip(guiGraphics, mouseX, mouseY);
             }
         }
         
-        private void renderTooltip(PoseStack poseStack, int mouseX, int mouseY) {
+        private void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.literal(getTranslatedText("gui.mobscaler.tooltip.id").getString() + entityId));
             tooltip.add(Component.literal(getTranslatedText("gui.mobscaler.tooltip.name").getString() + displayName));
@@ -1097,24 +1107,23 @@ public class MobScalerScreen extends Screen {
             int tooltipY = mouseY - 40; // Увеличиваем отступ вверх
             
             // Сохраняем текущее состояние матрицы и настройки рендера
-            poseStack.pushPose();
+            guiGraphics.pose().pushPose();
             RenderSystem.disableDepthTest();
             
             // Устанавливаем Z-координату для отрисовки поверх всех элементов
-            poseStack.translate(0, 0, 400.0F);
+            guiGraphics.pose().translate(0, 0, 400.0F);
             
             // Отрисовываем подсказку
-            Minecraft.getInstance().screen.renderComponentTooltip(
-                poseStack,
+            guiGraphics.renderComponentTooltip(
+                Minecraft.getInstance().font,
                 tooltip,
                 mouseX,
-                Math.max(0, tooltipY),
-                Minecraft.getInstance().font
+                Math.max(0, tooltipY)
             );
             
             // Восстанавливаем состояние
             RenderSystem.enableDepthTest();
-            poseStack.popPose();
+            guiGraphics.pose().popPose();
         }
     }
 
@@ -2428,59 +2437,61 @@ public class MobScalerScreen extends Screen {
     }
     
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         // Рисуем полупрозрачный фон
-        this.renderBackground(poseStack);
-        fill(poseStack, 0, 0, this.width, this.height, BACKGROUND_COLOR);
+        this.renderBackground(guiGraphics);
+        guiGraphics.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
         
         // Рисуем основной заголовок
-        drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.title").getString(), this.width / 2, 15, TEXT_COLOR);
+        guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.title").getString(), this.width / 2, 15, TEXT_COLOR);
+        
+        guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.title").getString(), this.width / 2, 15, TEXT_COLOR);
         
         // Отрисовываем панель прокрутки, если она существует, мы на вкладке модов и мод не выбран
         if (currentTab == TabType.MODS && modListPanel != null && selectedMod == null) {
-            modListPanel.render(poseStack, mouseX, mouseY, partialTick);
+            modListPanel.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         // Отрисовываем все виджеты
-        super.render(poseStack, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         // Отрисовываем заголовок только для активной вкладки
         if (currentTab == TabType.MODS) {
             if (selectedMod != null) {
                 // Заголовок с названием мода отрисовывается через addLabel
-                fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
+                guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
             }
         } else if (currentTab == TabType.DIMENSIONS) {
             if (selectedDimension != null) {
                 // Заголовок с названием измерения отрисовывается через addLabel
-                fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
+                guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
             }
         } else if (currentTab == TabType.DIFFICULTY) {
             // Заголовок для вкладки сложности
-            fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.difficulty.settings").getString(), this.width / 2, 40, TEXT_COLOR);
+            guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.difficulty.settings").getString(), this.width / 2, 40, TEXT_COLOR);
         }
         
         // Отрисовываем все метки
         for (Label label : labels) {
-            label.render(poseStack, this.font);
+            label.render(guiGraphics, this.font);
         }
         
         // Отрисовываем все элементы интерфейса
         for (EditBox field : textFields) {
-            field.render(poseStack, mouseX, mouseY, partialTick);
+            field.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         for (CheckBox checkbox : checkBoxes) {
-            checkbox.render(poseStack, mouseX, mouseY, partialTick);
+            checkbox.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         for (Button button : contentButtons) {
-            button.render(poseStack, mouseX, mouseY, partialTick);
+            button.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         for (Button button : tabButtons) {
-            button.render(poseStack, mouseX, mouseY, partialTick);
+            button.render(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -2576,22 +2587,22 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.mod").getString() + " " + modId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.mod").getString() + " " + modId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -2722,22 +2733,22 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_mod").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_mod").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mod_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mod_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -2745,7 +2756,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -2753,15 +2764,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -2923,22 +2934,22 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_dimension").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_dimension").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_dimension_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_dimension_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -2946,7 +2957,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -2954,15 +2965,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -3054,22 +3065,22 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.dimension").getString() + " " + dimensionId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.dimension").getString() + " " + dimensionId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -3837,22 +3848,22 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_mob").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_mob").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mob_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mob_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -3860,7 +3871,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -3868,15 +3879,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -3999,22 +4010,22 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.mob").getString() + " " + mobId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.mob").getString() + " " + mobId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -4361,24 +4372,24 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Рисуем сообщение
-            drawCenteredString(poseStack, this.font, 
+            guiGraphics.drawCenteredString(this.font, 
                 getTranslatedText("gui.mobscaler.confirm.delete.player_dimension", dimensionId).getString(), 
                 this.width / 2, dialogY + 30, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5042,20 +5053,20 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_dimension_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_dimension_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем предложения
             if (!suggestions.isEmpty()) {
@@ -5065,7 +5076,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, suggestionX + suggestionWidth, 
+                guiGraphics.fill(suggestionX, suggestionY, suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 0x80000000);
                 
                 // Отрисовка предложений
@@ -5074,18 +5085,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделение выбранного предложения
                     if (isSelected) {
-                        fill(poseStack, suggestionX, suggestionY + (i - scrollOffset) * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + (i - scrollOffset) * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i - scrollOffset + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestions.get(i), 
+                    guiGraphics.drawString(this.font, suggestions.get(i), 
                                suggestionX + 5, suggestionY + (i - scrollOffset) * suggestionHeight + 6, 
                                isSelected ? 0xFFFFFF00 : TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5142,6 +5153,7 @@ this.contentButtons.add(attributeTypeButton);
     private double getBaseAttributeValue(String entityId, String attributeName) {
         try {
             // Получаем тип сущности из регистра
+            @SuppressWarnings("removal")
             net.minecraft.world.entity.EntityType<?> entityType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
                 new net.minecraft.resources.ResourceLocation(entityId)
             );
@@ -5404,20 +5416,20 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mod_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mod_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем список предложений
             if (!suggestions.isEmpty()) {
@@ -5427,7 +5439,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Рисуем фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, 
+                guiGraphics.fill( suggestionX, suggestionY, 
                      suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 
                      0x80000000);
@@ -5439,18 +5451,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделяем выбранное предложение
                     if (index == selectedSuggestion) {
-                        fill(poseStack, suggestionX, suggestionY + i * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + i * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, 
+                    guiGraphics.drawString(this.font, suggestion, 
                                suggestionX + 5, suggestionY + i * suggestionHeight + 6, 
                                TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5652,20 +5664,20 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics);
             
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mob_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mob_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем список предложений
             if (!suggestions.isEmpty()) {
@@ -5675,7 +5687,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Рисуем фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, 
+                guiGraphics.fill(suggestionX, suggestionY, 
                      suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 
                      0x80000000);
@@ -5687,18 +5699,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделяем выбранное предложение
                     if (index == selectedSuggestion) {
-                        fill(poseStack, suggestionX, suggestionY + i * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + i * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, 
+                    guiGraphics.drawString(this.font, suggestion, 
                                suggestionX + 5, suggestionY + i * suggestionHeight + 6, 
                                TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5788,9 +5800,9 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             // Рисуем фон панели
-            fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, 0x80000000);
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x80000000);
             
             // Рисуем элементы списка
             int visibleItems = Math.min(items.size() - scrollOffset, maxVisibleItems);
@@ -5805,52 +5817,52 @@ this.contentButtons.add(attributeTypeButton);
                 }
                 
                 // Рисуем элемент
-                drawString(poseStack, font, displayName, this.x + 5, this.y + i * itemHeight + 5, TEXT_COLOR);
+                guiGraphics.drawString(font, displayName, this.getX() + 5, this.getY() + i * itemHeight + 5, TEXT_COLOR);
                 
                 // Рисуем кнопку удаления
-                int buttonX = this.x + this.width - 20;
-                int buttonY = this.y + i * itemHeight;
+                int buttonX = this.getX() + this.getWidth() - 20;
+                int buttonY = this.getY() + i * itemHeight;
                 
                 // Проверяем, наведена ли мышь на кнопку удаления
                 boolean isHovered = mouseX >= buttonX && mouseX <= buttonX + 15 && 
                                    mouseY >= buttonY && mouseY <= buttonY + 15;
                 
                 // Рисуем фон кнопки
-                fill(poseStack, buttonX, buttonY, buttonX + 15, buttonY + 15, 
+                guiGraphics.fill(buttonX, buttonY, buttonX + 15, buttonY + 15, 
                     isHovered ? 0xFFFF0000 : 0xFFAA0000);
                 
                 // Рисуем X
-                drawCenteredString(poseStack, font, "X", buttonX + 7, buttonY + 3, 0xFFFFFFFF);
+                guiGraphics.drawCenteredString(font, "X", buttonX + 7, buttonY + 3, 0xFFFFFFFF);
             }
             
             // Рисуем полосу прокрутки, если элементов больше, чем может поместиться
             if (items.size() > maxVisibleItems) {
-                int scrollBarX = this.x + this.width - 5;
+                int scrollBarX = this.getX() + this.getWidth() - 5;
                 int scrollBarWidth = 3;
                 
                 // Фон полосы прокрутки
-                fill(poseStack, scrollBarX, this.y, scrollBarX + scrollBarWidth, this.y + this.height, 0x80AAAAAA);
+                guiGraphics.fill(scrollBarX, this.getY(), scrollBarX + scrollBarWidth, this.getY() + this.getHeight(), 0x80AAAAAA);
                 
                 // Ползунок прокрутки
                 float scrollRatio = (float) scrollOffset / (items.size() - maxVisibleItems);
-                int thumbHeight = Math.max(20, this.height * maxVisibleItems / items.size());
-                int thumbY = this.y + (int) (scrollRatio * (this.height - thumbHeight));
+                int thumbHeight = Math.max(20, this.getHeight() * maxVisibleItems / items.size());
+                int thumbY = this.getY() + (int) (scrollRatio * (this.getHeight() - thumbHeight));
                 
-                fill(poseStack, scrollBarX, thumbY, scrollBarX + scrollBarWidth, thumbY + thumbHeight, 0xFFFFFFFF);
+                guiGraphics.fill(scrollBarX, thumbY, scrollBarX + scrollBarWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
         }
         
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (button == 0 && mouseX >= this.x && mouseX <= this.x + this.width && 
-                mouseY >= this.y && mouseY <= this.y + this.height) {
+            if (button == 0 && mouseX >= this.getX() && mouseX <= this.getX() + this.getWidth() && 
+                mouseY >= this.getY() && mouseY <= this.getY() + this.getHeight()) {
                 
                 // Проверяем, кликнули ли на кнопку удаления
                 int visibleItems = Math.min(items.size() - scrollOffset, maxVisibleItems);
                 for (int i = 0; i < visibleItems; i++) {
                     int index = i + scrollOffset;
-                    int buttonX = this.x + this.width - 20;
-                    int buttonY = this.y + i * itemHeight;
+                    int buttonX = this.getX() + this.getWidth() - 20;
+                    int buttonY = this.getY() + i * itemHeight;
                     
                     if (mouseX >= buttonX && mouseX <= buttonX + 15 && 
                         mouseY >= buttonY && mouseY <= buttonY + 15) {
@@ -5873,8 +5885,8 @@ this.contentButtons.add(attributeTypeButton);
         
         @Override
         public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-            if (mouseX >= this.x && mouseX <= this.x + this.width && 
-                mouseY >= this.y && mouseY <= this.y + this.height) {
+            if (mouseX >= this.getX() && mouseX <= this.getX() + this.getWidth() && 
+                mouseY >= this.getY() && mouseY <= this.getY() + this.getHeight()) {
                 
                 if (items.size() > maxVisibleItems) {
                     int maxScroll = items.size() - maxVisibleItems;
@@ -5886,7 +5898,7 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void updateNarration(NarrationElementOutput narrationElementOutput) {
+        public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
             // Реализация для доступности
             narrationElementOutput.add(NarratedElementType.TITLE, Component.literal("Черный список"));
         }
