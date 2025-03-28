@@ -79,7 +79,22 @@ public class PlayerConfig {
         private final double flyingSpeedAddition;
         @SerializedName("flyingSpeedMultiplier")
         private final double flyingSpeedMultiplier;
-
+        @SerializedName("armorToughnessAddition")
+        private final double armorToughnessAddition;
+        @SerializedName("armorToughnessMultiplier")
+        private final double armorToughnessMultiplier;
+        @SerializedName("luckAddition")
+        private final double luckAddition;
+        @SerializedName("luckMultiplier")
+        private final double luckMultiplier;
+        @SerializedName("swimSpeedAddition")
+        private final double swimSpeedAddition;
+        @SerializedName("swimSpeedMultiplier")
+        private final double swimSpeedMultiplier;
+        @SerializedName("reachDistanceAddition")
+        private final double reachDistanceAddition;
+        @SerializedName("reachDistanceMultiplier")
+        private final double reachDistanceMultiplier;
         // Ночные настройки
         @SerializedName("nightHealthAddition")
         private final double nightHealthAddition;
@@ -117,6 +132,25 @@ public class PlayerConfig {
         private final double nightFlyingSpeedAddition;
         @SerializedName("nightFlyingSpeedMultiplier")
         private final double nightFlyingSpeedMultiplier;
+        @SerializedName("nightArmorToughnessAddition")
+        private final double nightArmorToughnessAddition;
+        @SerializedName("nightArmorToughnessMultiplier")
+        private final double nightArmorToughnessMultiplier;
+        @SerializedName("nightLuckAddition")
+        private final double nightLuckAddition;
+        @SerializedName("nightLuckMultiplier")
+        private final double nightLuckMultiplier;
+        @SerializedName("gravityMultiplier")
+        private final double gravityMultiplier;
+        @SerializedName("nightSwimSpeedAddition")
+        private final double nightSwimSpeedAddition;
+        @SerializedName("nightSwimSpeedMultiplier")
+        private final double nightSwimSpeedMultiplier;
+        @SerializedName("nightReachDistanceAddition")
+        private final double nightReachDistanceAddition;
+        @SerializedName("nightReachDistanceMultiplier")
+        private final double nightReachDistanceMultiplier;
+
 
         public PlayerModifiers() {
             this.enableNightScaling = false;
@@ -139,6 +173,14 @@ public class PlayerConfig {
             this.followRangeMultiplier = 1.0;
             this.flyingSpeedAddition = 0.0;
             this.flyingSpeedMultiplier = 1.0;
+            this.armorToughnessAddition = 0.0;
+            this.armorToughnessMultiplier = 1.0;
+            this.luckAddition = 0.0;
+            this.luckMultiplier = 1.0;
+            this.swimSpeedAddition = 0.0;
+            this.swimSpeedMultiplier = 1.0;
+            this.reachDistanceAddition = 0.0;
+            this.reachDistanceMultiplier = 1.0;
             // Ночные настройки
             this.nightHealthAddition = 0.0;
             this.nightHealthMultiplier = 1.0;
@@ -158,6 +200,16 @@ public class PlayerConfig {
             this.nightFollowRangeMultiplier = 1.0;
             this.nightFlyingSpeedAddition = 0.0;
             this.nightFlyingSpeedMultiplier = 1.0;
+            this.nightArmorToughnessAddition = 0.0;
+            this.nightArmorToughnessMultiplier = 1.0;
+            this.nightLuckAddition = 0.0;
+            this.nightLuckMultiplier = 1.0;
+            // Множитель гравитации
+            this.gravityMultiplier = 1.0;
+            this.nightSwimSpeedAddition = 0.0;
+            this.nightSwimSpeedMultiplier = 1.0;
+            this.nightReachDistanceAddition = 0.0;
+            this.nightReachDistanceMultiplier = 1.0;
         }
 
         // Геттеры для дневных настроек
@@ -200,5 +252,27 @@ public class PlayerConfig {
         public double getNightFollowRangeMultiplier() { return nightFollowRangeMultiplier; }
         public double getNightFlyingSpeedAddition() { return nightFlyingSpeedAddition; }
         public double getNightFlyingSpeedMultiplier() { return nightFlyingSpeedMultiplier; }
+        public double getArmorToughnessAddition() { return armorToughnessAddition; }
+        public double getArmorToughnessMultiplier() { return armorToughnessMultiplier; }
+        public double getLuckAddition() { return luckAddition; }
+        public double getLuckMultiplier() { return luckMultiplier; }
+        public double getNightArmorToughnessAddition() { return nightArmorToughnessAddition; }
+        public double getNightArmorToughnessMultiplier() { return nightArmorToughnessMultiplier; }
+        public double getNightLuckAddition() { return nightLuckAddition; }
+        public double getNightLuckMultiplier() { return nightLuckMultiplier; }
+        // Геттер для множителя гравитации
+        public double getGravityMultiplier() { return gravityMultiplier; }
+        
+        // Геттеры для скорости плавания
+        public double getSwimSpeedAddition() { return swimSpeedAddition; }
+        public double getSwimSpeedMultiplier() { return swimSpeedMultiplier; }
+        public double getNightSwimSpeedAddition() { return nightSwimSpeedAddition; }
+        public double getNightSwimSpeedMultiplier() { return nightSwimSpeedMultiplier; }
+        
+        // Геттеры для дальности взаимодействия
+        public double getReachDistanceAddition() { return reachDistanceAddition; }
+        public double getReachDistanceMultiplier() { return reachDistanceMultiplier; }
+        public double getNightReachDistanceAddition() { return nightReachDistanceAddition; }
+        public double getNightReachDistanceMultiplier() { return nightReachDistanceMultiplier; }
     }
 } 

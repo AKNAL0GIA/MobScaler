@@ -4,7 +4,7 @@ license="MIT License"
 
 [[mods]]
 modId="mobscaler"
-version="2.3.5"
+version="3.1.0"
 displayName="Mob Scaler"
 description='''
 A mod that allows you to customize mob and player attributes based on dimensions and time of day.
@@ -14,14 +14,13 @@ Features:
 • Day/night cycle modifiers
 • Difficulty-based scaling
 • Player-specific modifiers
-• Blacklist system for mods and entities
+• Blacklist system for mods and entities1
 • Separate player and mob configurations
-• Cave enhancement system:
-  - Configurable cave height threshold
-  - Enhanced mob attributes in caves
-  - Separate blacklist for cave mobs
-  - Difficulty-based cave scaling
-/mobscaler reload
+• Cave enhancement system
+• /mobscaler reload   command if u using configs
+• GUI
+• New attributes and gravity
+ 
 
 Configure mob and player attributes in config/mobscaler/
 '''

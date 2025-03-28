@@ -3,7 +3,7 @@ package com.example.mobscaler.commands;
 import com.example.mobscaler.config.MobScalerConfig;
 import com.example.mobscaler.config.DimensionConfigManager;
 import com.example.mobscaler.config.PlayerConfigManager;
-import com.example.mobscaler.config.CaveConfigManager;
+import com.example.mobscaler.config.IndividualMobConfigManager;
 import com.example.mobscaler.events.EntityHandler;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -36,7 +36,12 @@ public class ReloadCommand {
             MobScalerConfig.init();
             DimensionConfigManager.loadConfigs();
             PlayerConfigManager.loadConfigs();
-            CaveConfigManager.loadConfigs();
+            
+            // Очищаем все индивидуальные настройки мобов перед загрузкой новых
+            com.example.mobscaler.config.IndividualMobManager.clearAllIndividualMobConfigs();
+            
+            // Загружаем новые конфигурации
+            IndividualMobConfigManager.loadConfigs();
             
             // Update all entities in the world
             ServerLevel serverLevel = context.getSource().getLevel();

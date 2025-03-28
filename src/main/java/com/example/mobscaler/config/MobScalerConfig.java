@@ -88,6 +88,9 @@ public class MobScalerConfig {
         // Load dimension configuration
         DimensionConfigManager.loadConfigs();
         DIMENSIONS.putAll(DimensionConfigManager.getDimensionConfigs());
+        
+        // Load mod and individual mob configurations
+        IndividualMobConfigManager.loadConfigs();
     }
 
     /**
@@ -157,42 +160,25 @@ public class MobScalerConfig {
         private static Map<String, DimensionConfig> getDefaultDimensionConfigs() {
             Map<String, DimensionConfig> defaults = new HashMap<>();
             defaults.put("minecraft:overworld", new DimensionConfig(
-                true, // enableNightScaling
-                // Day settings
-                2.0, 1.2,  // health
-                1.0, 1.2,  // armor
-                1.0, 1.2,  // damage
-                0.0, 1.1,  // speed
-                0.0, 1.0,  // knockback resistance
-                0.0, 1.0,  // attack knockback
-                0.0, 1.0,  // attack speed
-                0.0, 1.0,  // follow range
-                0.0, 1.0,  // flying speed
-                // Night settings
-                4.0, 1.5,  // night health
-                2.0, 1.5,  // night armor
-                2.0, 1.5,  // night damage
-                0.0, 1.2,  // night speed
-                0.0, 1.0,  // night knockback resistance
-                0.0, 1.0,  // night attack knockback
-                0.0, 1.0,  // night attack speed
-                0.0, 1.0,  // night follow range
-                0.0, 1.0,  // night flying speed
-                new ArrayList<String>(),
-                new ArrayList<String>()
-            ));
-            defaults.put("minecraft:the_nether", new DimensionConfig(
                 false, // enableNightScaling
+                false, // enableCaveScaling
+                -5.0, // caveHeight
+                false, // enableGravity
+                1.0, // gravityMultiplier
                 // Day settings
-                5.0, 1.5,  // health
-                5.0, 1.5,  // armor
-                3.0, 1.5,  // damage
+                0.0, 1.0,  // health
+                0.0, 1.0,  // armor
+                0.0, 1.0,  // damage
                 0.0, 1.0,  // speed
                 0.0, 1.0,  // knockback resistance
                 0.0, 1.0,  // attack knockback
                 0.0, 1.0,  // attack speed
                 0.0, 1.0,  // follow range
                 0.0, 1.0,  // flying speed
+                0.0, 1.0,  // armor toughness
+                0.0, 1.0,  // luck
+                0.0, 1.0,  // swim speed
+                0.0, 1.0,  // reach distance
                 // Night settings
                 0.0, 1.0,  // night health
                 0.0, 1.0,  // night armor
@@ -203,11 +189,86 @@ public class MobScalerConfig {
                 0.0, 1.0,  // night attack speed
                 0.0, 1.0,  // night follow range
                 0.0, 1.0,  // night flying speed
-                new ArrayList<String>(),
-                Arrays.asList("minecraft:ender_dragon")
+                0.0, 1.0,  // night armor toughness
+                0.0, 1.0,  // night luck
+                0.0, 1.0,  // night swim speed
+                0.0, 1.0,  // night reach distance
+                // Cave settings
+                0.0, 1.0,  // cave health
+                0.0, 1.0,  // cave armor
+                0.0, 1.0,  // cave damage
+                0.0, 1.0,  // cave speed
+                0.0, 1.0,  // cave knockback resistance
+                0.0, 1.0,  // cave attack knockback
+                0.0, 1.0,  // cave attack speed
+                0.0, 1.0,  // cave follow range
+                0.0, 1.0,  // cave flying speed
+                0.0, 1.0,  // cave armor toughness
+                0.0, 1.0,  // cave luck
+                0.0, 1.0,  // cave swim speed
+                0.0, 1.0,  // cave reach distance
+                // Общие черные списки
+                new ArrayList<String>(),  // modBlacklist
+                new ArrayList<String>()   // entityBlacklist
+            ));
+            defaults.put("minecraft:the_nether", new DimensionConfig(
+                false, // enableNightScaling
+                false,  // enableCaveScaling
+                30.0,  // caveHeight
+                false, // enableGravity
+                1.0, // gravityMultiplier
+                // Day settings
+                5.0, 1.3,  // health
+                5.0, 1.3,  // armor
+                5.0, 1.3,  // damage
+                0.0, 1.3,  // speed
+                0.0, 1.3,  // knockback resistance
+                0.0, 1.3,  // attack knockback
+                0.0, 1.3,  // attack speed
+                0.0, 1.3,  // follow range
+                0.0, 1.3,  // flying speed
+                0.0, 1.3,  // armor toughness
+                0.0, 1.3,  // luck
+                0.0, 1.3,  // swim speed
+                0.0, 1.3,  // reach distance
+                // Night settings
+                0.0, 1.3,  // night health
+                0.0, 1.3,  // night armor
+                0.0, 1.3,  // night damage
+                0.0, 1.0,  // night speed
+                0.0, 1.0,  // night knockback resistance
+                0.0, 1.0,  // night attack knockback
+                0.0, 1.0,  // night attack speed
+                0.0, 1.0,  // night follow range
+                0.0, 1.0,  // night flying speed
+                0.0, 1.0,  // night armor toughness
+                0.0, 1.0,  // night luck
+                0.0, 1.0,  // night swim speed
+                0.0, 1.0,  // night reach distance
+                // Cave settings
+                0.0, 1.0,  // cave health
+                0.0, 1.0,  // cave armor
+                0.0, 1.0,  // cave damage
+                0.0, 1.0,  // cave speed
+                0.0, 1.0,  // cave knockback resistance
+                0.0, 1.0,  // cave attack knockback
+                0.0, 1.0,  // cave attack speed
+                0.0, 1.0,  // cave follow range
+                0.0, 1.0,  // cave flying speed
+                0.0, 1.0,  // cave armor toughness
+                0.0, 1.0,  // cave luck
+                0.0, 1.0,  // cave swim speed
+                0.0, 1.0,  // cave reach distance
+                // Общие черные списки
+                new ArrayList<String>(),  // modBlacklist
+                Arrays.asList("minecraft:ender_dragon")  // entityBlacklist
             ));
             defaults.put("minecraft:the_end", new DimensionConfig(
                 false, // enableNightScaling
+                false, // enableCaveScaling
+                0.0,   // caveHeight
+                false, // enableGravity
+                1.0, // gravityMultiplier
                 // Day settings
                 10.0, 2.0,  // health
                 10.0, 2.0,  // armor
@@ -218,6 +279,10 @@ public class MobScalerConfig {
                 0.0, 1.0,   // attack speed
                 0.0, 1.0,   // follow range
                 0.0, 1.0,   // flying speed
+                0.0, 1.0,   // armor toughness
+                0.0, 1.0,   // luck
+                0.0, 1.0,   // swim speed
+                0.0, 1.0,   // reach distance
                 // Night settings
                 0.0, 1.0,  // night health
                 0.0, 1.0,  // night armor
@@ -228,8 +293,27 @@ public class MobScalerConfig {
                 0.0, 1.0,  // night attack speed
                 0.0, 1.0,  // night follow range
                 0.0, 1.0,  // night flying speed
-                new ArrayList<String>(),
-                Arrays.asList("minecraft:wither")
+                0.0, 1.0,  // night armor toughness
+                0.0, 1.0,  // night luck
+                0.0, 1.0,  // night swim speed
+                0.0, 1.0,  // night reach distance
+                // Cave settings
+                0.0, 1.0,  // cave health
+                0.0, 1.0,  // cave armor
+                0.0, 1.0,  // cave damage
+                0.0, 1.0,  // cave speed
+                0.0, 1.0,  // cave knockback resistance
+                0.0, 1.0,  // cave attack knockback
+                0.0, 1.0,  // cave attack speed
+                0.0, 1.0,  // cave follow range
+                0.0, 1.0,  // cave flying speed
+                0.0, 1.0,  // cave armor toughness
+                0.0, 1.0,  // cave luck
+                0.0, 1.0,  // cave swim speed
+                0.0, 1.0,  // cave reach distance
+                // Общие черные списки
+                new ArrayList<String>(),  // modBlacklist
+                Arrays.asList("minecraft:wither")  // entityBlacklist
             ));
             return defaults;
         }
@@ -246,6 +330,10 @@ public class MobScalerConfig {
                     if (!dimensionConfigs.containsKey(dimId)) {
                         dimensionConfigs.put(dimId, new DimensionConfig(
                             false, // enableNightScaling
+                            false, // enableCaveScaling
+                            -5.0,   // caveHeight
+                            false, // enableGravity
+                            1.0, // gravityMultiplier
                             // Day settings
                             0.0, 1.0,  // health
                             0.0, 1.0,  // armor
@@ -256,6 +344,10 @@ public class MobScalerConfig {
                             0.0, 1.0,  // attack speed
                             0.0, 1.0,  // follow range
                             0.0, 1.0,  // flying speed
+                            0.0, 1.0,  // armor toughness
+                            0.0, 1.0,  // luck
+                            0.0, 1.0,  // swim speed
+                            0.0, 1.0,  // reach distance
                             // Night settings
                             0.0, 1.0,  // night health
                             0.0, 1.0,  // night armor
@@ -266,13 +358,68 @@ public class MobScalerConfig {
                             0.0, 1.0,  // night attack speed
                             0.0, 1.0,  // night follow range
                             0.0, 1.0,  // night flying speed
-                            new ArrayList<String>(),
-                            new ArrayList<String>()
+                            0.0, 1.0,  // night armor toughness
+                            0.0, 1.0,  // night luck
+                            0.0, 1.0,  // night swim speed
+                            0.0, 1.0,  // night reach distance
+                            // Cave settings
+                            0.0, 1.0,  // cave health
+                            0.0, 1.0,  // cave armor
+                            0.0, 1.0,  // cave damage
+                            0.0, 1.0,  // cave speed
+                            0.0, 1.0,  // cave knockback resistance
+                            0.0, 1.0,  // cave attack knockback
+                            0.0, 1.0,  // cave attack speed
+                            0.0, 1.0,  // cave follow range
+                            0.0, 1.0,  // cave flying speed
+                            0.0, 1.0,  // cave armor toughness
+                            0.0, 1.0,  // cave luck
+                            0.0, 1.0,  // cave swim speed
+                            0.0, 1.0,  // cave reach distance
+                            // Общие черные списки
+                            new ArrayList<String>(),  // modBlacklist
+                            new ArrayList<String>()   // entityBlacklist
                         ));
                     }
                 }
                 saveConfigs();
             }
         }
+    }
+
+    public static double getDifficultyValue(String path) {
+        if (path == null) return 1.0;
+        
+        return switch (path) {
+            case "difficulty.health.peaceful" -> HEALTH_PEACEFUL.get();
+            case "difficulty.health.easy" -> HEALTH_EASY.get();
+            case "difficulty.health.normal" -> HEALTH_NORMAL.get();
+            case "difficulty.health.hard" -> HEALTH_HARD.get();
+            case "difficulty.damage.peaceful" -> DAMAGE_PEACEFUL.get();
+            case "difficulty.damage.easy" -> DAMAGE_EASY.get();
+            case "difficulty.damage.normal" -> DAMAGE_NORMAL.get();
+            case "difficulty.damage.hard" -> DAMAGE_HARD.get();
+            default -> 1.0;
+        };
+    }
+    
+    public static void setDifficultyValue(String path, double value) {
+        if (path == null) return;
+        
+        switch (path) {
+            case "difficulty.health.peaceful" -> HEALTH_PEACEFUL.set(value);
+            case "difficulty.health.easy" -> HEALTH_EASY.set(value);
+            case "difficulty.health.normal" -> HEALTH_NORMAL.set(value);
+            case "difficulty.health.hard" -> HEALTH_HARD.set(value);
+            case "difficulty.damage.peaceful" -> DAMAGE_PEACEFUL.set(value);
+            case "difficulty.damage.easy" -> DAMAGE_EASY.set(value);
+            case "difficulty.damage.normal" -> DAMAGE_NORMAL.set(value);
+            case "difficulty.damage.hard" -> DAMAGE_HARD.set(value);
+        }
+    }
+    
+    public static void save() {
+        // Конфигурация Forge сохраняется автоматически при изменении значений
+        // Но мы можем добавить дополнительную логику сохранения здесь, если потребуется
     }
 }
