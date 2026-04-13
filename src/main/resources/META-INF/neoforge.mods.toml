@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[1,)"
 license="MIT License"
 
 [[mods]]
@@ -14,13 +14,13 @@ Features:
 • Day/night cycle modifiers
 • Difficulty-based scaling
 • Player-specific modifiers
-• Blacklist system for mods and entities1
+• Blacklist system for mods and entities
 • Separate player and mob configurations
 • Cave enhancement system
-• /mobscaler reload   command if u using configs
+• /mobscaler reload command if u using configs
 • GUI
 • New attributes and gravity
- 
+
 
 Configure mob and player attributes in config/mobscaler/
 '''
@@ -31,15 +31,15 @@ displayURL="https://www.curseforge.com/minecraft/mc-mods/dimension-amplifier-mob
 displayTest="MATCH_VERSION"
 
 [[dependencies.mobscaler]]
-    modId="forge"
-    mandatory=true
-    versionRange="[47,)"
+    modId="neoforge"
+    type="required"
+    versionRange="[21,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.mobscaler]]
     modId="minecraft"
-    mandatory=true
+    type="required"
     versionRange="[1.21,1.22)"
     ordering="NONE"
     side="BOTH"

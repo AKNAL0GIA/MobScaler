@@ -21,7 +21,6 @@ public class PlayerConfigManager {
 
     public static void loadConfigs() {
         if (!Files.exists(CONFIG_PATH)) {
-            // Файл не существует – создаём дефолтные настройки и сохраняем
             playerConfig = getDefaultPlayerConfig();
             saveConfigs();
         } else {
@@ -31,13 +30,11 @@ public class PlayerConfigManager {
                 if (loadedConfig != null) {
                     playerConfig = loadedConfig;
                 } else {
-                    // Если конфиг поврежден или пуст, создаем новый
                     playerConfig = getDefaultPlayerConfig();
                     saveConfigs();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                // В случае ошибки создаем новый конфиг
                 playerConfig = getDefaultPlayerConfig();
                 saveConfigs();
             }

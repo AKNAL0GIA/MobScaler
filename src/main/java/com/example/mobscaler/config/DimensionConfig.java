@@ -14,7 +14,7 @@ public class DimensionConfig {
     private final boolean enableGravity;
     @SerializedName("gravityMultiplier")
     private final double gravityMultiplier;
-    
+
     // Дневные настройки
     @SerializedName("healthAddition")
     private final double healthAddition;
@@ -64,10 +64,36 @@ public class DimensionConfig {
     private final double swimSpeedAddition;
     @SerializedName("swimSpeedMultiplier")
     private final double swimSpeedMultiplier;
-    @SerializedName("reachDistanceAddition")
-    private final double reachDistanceAddition;
-    @SerializedName("reachDistanceMultiplier")
-    private final double reachDistanceMultiplier;
+    @SerializedName("blockReachAddition")
+    private final double blockReachAddition;
+    @SerializedName("blockReachMultiplier")
+    private final double blockReachMultiplier;
+    @SerializedName("entityReachAddition")
+    private final double entityReachAddition;
+    @SerializedName("entityReachMultiplier")
+    private final double entityReachMultiplier;
+    @SerializedName("burningTimeAddition")
+    private final double burningTimeAddition;
+    @SerializedName("burningTimeMultiplier")
+    private final double burningTimeMultiplier;
+    @SerializedName("explosionKnockbackResistanceAddition")
+    private final double explosionKnockbackResistanceAddition;
+    @SerializedName("explosionKnockbackResistanceMultiplier")
+    private final double explosionKnockbackResistanceMultiplier;
+    @SerializedName("fallDamageMultiplier")
+    private final double fallDamageMultiplier;
+    @SerializedName("oxygenBonusAddition")
+    private final double oxygenBonusAddition;
+    @SerializedName("oxygenBonusMultiplier")
+    private final double oxygenBonusMultiplier;
+    @SerializedName("safeFallDistanceAddition")
+    private final double safeFallDistanceAddition;
+    @SerializedName("safeFallDistanceMultiplier")
+    private final double safeFallDistanceMultiplier;
+    @SerializedName("waterMovementEfficiencyAddition")
+    private final double waterMovementEfficiencyAddition;
+    @SerializedName("waterMovementEfficiencyMultiplier")
+    private final double waterMovementEfficiencyMultiplier;
 
     // Ночные настройки
     @SerializedName("nightHealthAddition")
@@ -118,10 +144,36 @@ public class DimensionConfig {
     private final double nightSwimSpeedAddition;
     @SerializedName("nightSwimSpeedMultiplier")
     private final double nightSwimSpeedMultiplier;
-    @SerializedName("nightReachDistanceAddition")
-    private final double nightReachDistanceAddition;
-    @SerializedName("nightReachDistanceMultiplier")
-    private final double nightReachDistanceMultiplier;
+    @SerializedName("nightBlockReachAddition")
+    private final double nightBlockReachAddition;
+    @SerializedName("nightBlockReachMultiplier")
+    private final double nightBlockReachMultiplier;
+    @SerializedName("nightEntityReachAddition")
+    private final double nightEntityReachAddition;
+    @SerializedName("nightEntityReachMultiplier")
+    private final double nightEntityReachMultiplier;
+    @SerializedName("nightBurningTimeAddition")
+    private final double nightBurningTimeAddition;
+    @SerializedName("nightBurningTimeMultiplier")
+    private final double nightBurningTimeMultiplier;
+    @SerializedName("nightExplosionKnockbackResistanceAddition")
+    private final double nightExplosionKnockbackResistanceAddition;
+    @SerializedName("nightExplosionKnockbackResistanceMultiplier")
+    private final double nightExplosionKnockbackResistanceMultiplier;
+    @SerializedName("nightFallDamageMultiplier")
+    private final double nightFallDamageMultiplier;
+    @SerializedName("nightOxygenBonusAddition")
+    private final double nightOxygenBonusAddition;
+    @SerializedName("nightOxygenBonusMultiplier")
+    private final double nightOxygenBonusMultiplier;
+    @SerializedName("nightSafeFallDistanceAddition")
+    private final double nightSafeFallDistanceAddition;
+    @SerializedName("nightSafeFallDistanceMultiplier")
+    private final double nightSafeFallDistanceMultiplier;
+    @SerializedName("nightWaterMovementEfficiencyAddition")
+    private final double nightWaterMovementEfficiencyAddition;
+    @SerializedName("nightWaterMovementEfficiencyMultiplier")
+    private final double nightWaterMovementEfficiencyMultiplier;
 
     // Пещерные настройки
     @SerializedName("caveHealthAddition")
@@ -172,10 +224,36 @@ public class DimensionConfig {
     private final double caveSwimSpeedAddition;
     @SerializedName("caveSwimSpeedMultiplier")
     private final double caveSwimSpeedMultiplier;
-    @SerializedName("caveReachDistanceAddition")
-    private final double caveReachDistanceAddition;
-    @SerializedName("caveReachDistanceMultiplier")
-    private final double caveReachDistanceMultiplier;
+    @SerializedName("caveBlockReachAddition")
+    private final double caveBlockReachAddition;
+    @SerializedName("caveBlockReachMultiplier")
+    private final double caveBlockReachMultiplier;
+    @SerializedName("caveEntityReachAddition")
+    private final double caveEntityReachAddition;
+    @SerializedName("caveEntityReachMultiplier")
+    private final double caveEntityReachMultiplier;
+    @SerializedName("caveBurningTimeAddition")
+    private final double caveBurningTimeAddition;
+    @SerializedName("caveBurningTimeMultiplier")
+    private final double caveBurningTimeMultiplier;
+    @SerializedName("caveExplosionKnockbackResistanceAddition")
+    private final double caveExplosionKnockbackResistanceAddition;
+    @SerializedName("caveExplosionKnockbackResistanceMultiplier")
+    private final double caveExplosionKnockbackResistanceMultiplier;
+    @SerializedName("caveFallDamageMultiplier")
+    private final double caveFallDamageMultiplier;
+    @SerializedName("caveOxygenBonusAddition")
+    private final double caveOxygenBonusAddition;
+    @SerializedName("caveOxygenBonusMultiplier")
+    private final double caveOxygenBonusMultiplier;
+    @SerializedName("caveSafeFallDistanceAddition")
+    private final double caveSafeFallDistanceAddition;
+    @SerializedName("caveSafeFallDistanceMultiplier")
+    private final double caveSafeFallDistanceMultiplier;
+    @SerializedName("caveWaterMovementEfficiencyAddition")
+    private final double caveWaterMovementEfficiencyAddition;
+    @SerializedName("caveWaterMovementEfficiencyMultiplier")
+    private final double caveWaterMovementEfficiencyMultiplier;
 
     // Общие черные списки для всех условий (день, ночь, пещера)
     @SerializedName("modBlacklist")
@@ -202,7 +280,14 @@ public class DimensionConfig {
             double armorToughnessAddition, double armorToughnessMultiplier,
             double luckAddition, double luckMultiplier,
             double swimSpeedAddition, double swimSpeedMultiplier,
-            double reachDistanceAddition, double reachDistanceMultiplier,
+            double blockReachAddition, double blockReachMultiplier,
+            double entityReachAddition, double entityReachMultiplier,
+            double burningTimeAddition, double burningTimeMultiplier,
+            double explosionKnockbackResistanceAddition, double explosionKnockbackResistanceMultiplier,
+            double fallDamageMultiplier,
+            double oxygenBonusAddition, double oxygenBonusMultiplier,
+            double safeFallDistanceAddition, double safeFallDistanceMultiplier,
+            double waterMovementEfficiencyAddition, double waterMovementEfficiencyMultiplier,
             // Ночные настройки
             double nightHealthAddition, double nightHealthMultiplier,
             double nightArmorAddition, double nightArmorMultiplier,
@@ -216,7 +301,14 @@ public class DimensionConfig {
             double nightArmorToughnessAddition, double nightArmorToughnessMultiplier,
             double nightLuckAddition, double nightLuckMultiplier,
             double nightSwimSpeedAddition, double nightSwimSpeedMultiplier,
-            double nightReachDistanceAddition, double nightReachDistanceMultiplier,
+            double nightBlockReachAddition, double nightBlockReachMultiplier,
+            double nightEntityReachAddition, double nightEntityReachMultiplier,
+            double nightBurningTimeAddition, double nightBurningTimeMultiplier,
+            double nightExplosionKnockbackResistanceAddition, double nightExplosionKnockbackResistanceMultiplier,
+            double nightFallDamageMultiplier,
+            double nightOxygenBonusAddition, double nightOxygenBonusMultiplier,
+            double nightSafeFallDistanceAddition, double nightSafeFallDistanceMultiplier,
+            double nightWaterMovementEfficiencyAddition, double nightWaterMovementEfficiencyMultiplier,
             // Пещерные настройки
             double caveHealthAddition, double caveHealthMultiplier,
             double caveArmorAddition, double caveArmorMultiplier,
@@ -230,7 +322,14 @@ public class DimensionConfig {
             double caveArmorToughnessAddition, double caveArmorToughnessMultiplier,
             double caveLuckAddition, double caveLuckMultiplier,
             double caveSwimSpeedAddition, double caveSwimSpeedMultiplier,
-            double caveReachDistanceAddition, double caveReachDistanceMultiplier,
+            double caveBlockReachAddition, double caveBlockReachMultiplier,
+            double caveEntityReachAddition, double caveEntityReachMultiplier,
+            double caveBurningTimeAddition, double caveBurningTimeMultiplier,
+            double caveExplosionKnockbackResistanceAddition, double caveExplosionKnockbackResistanceMultiplier,
+            double caveFallDamageMultiplier,
+            double caveOxygenBonusAddition, double caveOxygenBonusMultiplier,
+            double caveSafeFallDistanceAddition, double caveSafeFallDistanceMultiplier,
+            double caveWaterMovementEfficiencyAddition, double caveWaterMovementEfficiencyMultiplier,
             // Общие черные списки
             List<String> modBlacklist,
             List<String> entityBlacklist
@@ -266,8 +365,21 @@ public class DimensionConfig {
         this.luckMultiplier = luckMultiplier;
         this.swimSpeedAddition = swimSpeedAddition;
         this.swimSpeedMultiplier = swimSpeedMultiplier;
-        this.reachDistanceAddition = reachDistanceAddition;
-        this.reachDistanceMultiplier = reachDistanceMultiplier;
+        this.blockReachAddition = blockReachAddition;
+        this.blockReachMultiplier = blockReachMultiplier;
+        this.entityReachAddition = entityReachAddition;
+        this.entityReachMultiplier = entityReachMultiplier;
+        this.burningTimeAddition = burningTimeAddition;
+        this.burningTimeMultiplier = burningTimeMultiplier;
+        this.explosionKnockbackResistanceAddition = explosionKnockbackResistanceAddition;
+        this.explosionKnockbackResistanceMultiplier = explosionKnockbackResistanceMultiplier;
+        this.fallDamageMultiplier = fallDamageMultiplier;
+        this.oxygenBonusAddition = oxygenBonusAddition;
+        this.oxygenBonusMultiplier = oxygenBonusMultiplier;
+        this.safeFallDistanceAddition = safeFallDistanceAddition;
+        this.safeFallDistanceMultiplier = safeFallDistanceMultiplier;
+        this.waterMovementEfficiencyAddition = waterMovementEfficiencyAddition;
+        this.waterMovementEfficiencyMultiplier = waterMovementEfficiencyMultiplier;
         // Ночные настройки
         this.nightHealthAddition = nightHealthAddition;
         this.nightHealthMultiplier = nightHealthMultiplier;
@@ -293,8 +405,21 @@ public class DimensionConfig {
         this.nightLuckMultiplier = nightLuckMultiplier;
         this.nightSwimSpeedAddition = nightSwimSpeedAddition;
         this.nightSwimSpeedMultiplier = nightSwimSpeedMultiplier;
-        this.nightReachDistanceAddition = nightReachDistanceAddition;
-        this.nightReachDistanceMultiplier = nightReachDistanceMultiplier;
+        this.nightBlockReachAddition = nightBlockReachAddition;
+        this.nightBlockReachMultiplier = nightBlockReachMultiplier;
+        this.nightEntityReachAddition = nightEntityReachAddition;
+        this.nightEntityReachMultiplier = nightEntityReachMultiplier;
+        this.nightBurningTimeAddition = nightBurningTimeAddition;
+        this.nightBurningTimeMultiplier = nightBurningTimeMultiplier;
+        this.nightExplosionKnockbackResistanceAddition = nightExplosionKnockbackResistanceAddition;
+        this.nightExplosionKnockbackResistanceMultiplier = nightExplosionKnockbackResistanceMultiplier;
+        this.nightFallDamageMultiplier = nightFallDamageMultiplier;
+        this.nightOxygenBonusAddition = nightOxygenBonusAddition;
+        this.nightOxygenBonusMultiplier = nightOxygenBonusMultiplier;
+        this.nightSafeFallDistanceAddition = nightSafeFallDistanceAddition;
+        this.nightSafeFallDistanceMultiplier = nightSafeFallDistanceMultiplier;
+        this.nightWaterMovementEfficiencyAddition = nightWaterMovementEfficiencyAddition;
+        this.nightWaterMovementEfficiencyMultiplier = nightWaterMovementEfficiencyMultiplier;
         // Пещерные настройки
         this.caveHealthAddition = caveHealthAddition;
         this.caveHealthMultiplier = caveHealthMultiplier;
@@ -320,8 +445,21 @@ public class DimensionConfig {
         this.caveLuckMultiplier = caveLuckMultiplier;
         this.caveSwimSpeedAddition = caveSwimSpeedAddition;
         this.caveSwimSpeedMultiplier = caveSwimSpeedMultiplier;
-        this.caveReachDistanceAddition = caveReachDistanceAddition;
-        this.caveReachDistanceMultiplier = caveReachDistanceMultiplier;
+        this.caveBlockReachAddition = caveBlockReachAddition;
+        this.caveBlockReachMultiplier = caveBlockReachMultiplier;
+        this.caveEntityReachAddition = caveEntityReachAddition;
+        this.caveEntityReachMultiplier = caveEntityReachMultiplier;
+        this.caveBurningTimeAddition = caveBurningTimeAddition;
+        this.caveBurningTimeMultiplier = caveBurningTimeMultiplier;
+        this.caveExplosionKnockbackResistanceAddition = caveExplosionKnockbackResistanceAddition;
+        this.caveExplosionKnockbackResistanceMultiplier = caveExplosionKnockbackResistanceMultiplier;
+        this.caveFallDamageMultiplier = caveFallDamageMultiplier;
+        this.caveOxygenBonusAddition = caveOxygenBonusAddition;
+        this.caveOxygenBonusMultiplier = caveOxygenBonusMultiplier;
+        this.caveSafeFallDistanceAddition = caveSafeFallDistanceAddition;
+        this.caveSafeFallDistanceMultiplier = caveSafeFallDistanceMultiplier;
+        this.caveWaterMovementEfficiencyAddition = caveWaterMovementEfficiencyAddition;
+        this.caveWaterMovementEfficiencyMultiplier = caveWaterMovementEfficiencyMultiplier;
         // Общие черные списки
         this.modBlacklist = modBlacklist;
         this.entityBlacklist = entityBlacklist;
@@ -360,8 +498,21 @@ public class DimensionConfig {
     public double getLuckMultiplier() { return luckMultiplier; }
     public double getSwimSpeedAddition() { return swimSpeedAddition; }
     public double getSwimSpeedMultiplier() { return swimSpeedMultiplier; }
-    public double getReachDistanceAddition() { return reachDistanceAddition; }
-    public double getReachDistanceMultiplier() { return reachDistanceMultiplier; }
+    public double getBlockReachAddition() { return blockReachAddition; }
+    public double getBlockReachMultiplier() { return blockReachMultiplier; }
+    public double getEntityReachAddition() { return entityReachAddition; }
+    public double getEntityReachMultiplier() { return entityReachMultiplier; }
+    public double getBurningTimeAddition() { return burningTimeAddition; }
+    public double getBurningTimeMultiplier() { return burningTimeMultiplier; }
+    public double getExplosionKnockbackResistanceAddition() { return explosionKnockbackResistanceAddition; }
+    public double getExplosionKnockbackResistanceMultiplier() { return explosionKnockbackResistanceMultiplier; }
+    public double getFallDamageMultiplier() { return fallDamageMultiplier; }
+    public double getOxygenBonusAddition() { return oxygenBonusAddition; }
+    public double getOxygenBonusMultiplier() { return oxygenBonusMultiplier; }
+    public double getSafeFallDistanceAddition() { return safeFallDistanceAddition; }
+    public double getSafeFallDistanceMultiplier() { return safeFallDistanceMultiplier; }
+    public double getWaterMovementEfficiencyAddition() { return waterMovementEfficiencyAddition; }
+    public double getWaterMovementEfficiencyMultiplier() { return waterMovementEfficiencyMultiplier; }
     // Геттеры для ночных настроек
     public double getNightHealthAddition() { return nightHealthAddition; }
     public double getNightHealthMultiplier() { return nightHealthMultiplier; }
@@ -387,8 +538,21 @@ public class DimensionConfig {
     public double getNightLuckMultiplier() { return nightLuckMultiplier; }
     public double getNightSwimSpeedAddition() { return nightSwimSpeedAddition; }
     public double getNightSwimSpeedMultiplier() { return nightSwimSpeedMultiplier; }
-    public double getNightReachDistanceAddition() { return nightReachDistanceAddition; }
-    public double getNightReachDistanceMultiplier() { return nightReachDistanceMultiplier; }
+    public double getNightBlockReachAddition() { return nightBlockReachAddition; }
+    public double getNightBlockReachMultiplier() { return nightBlockReachMultiplier; }
+    public double getNightEntityReachAddition() { return nightEntityReachAddition; }
+    public double getNightEntityReachMultiplier() { return nightEntityReachMultiplier; }
+    public double getNightBurningTimeAddition() { return nightBurningTimeAddition; }
+    public double getNightBurningTimeMultiplier() { return nightBurningTimeMultiplier; }
+    public double getNightExplosionKnockbackResistanceAddition() { return nightExplosionKnockbackResistanceAddition; }
+    public double getNightExplosionKnockbackResistanceMultiplier() { return nightExplosionKnockbackResistanceMultiplier; }
+    public double getNightFallDamageMultiplier() { return nightFallDamageMultiplier; }
+    public double getNightOxygenBonusAddition() { return nightOxygenBonusAddition; }
+    public double getNightOxygenBonusMultiplier() { return nightOxygenBonusMultiplier; }
+    public double getNightSafeFallDistanceAddition() { return nightSafeFallDistanceAddition; }
+    public double getNightSafeFallDistanceMultiplier() { return nightSafeFallDistanceMultiplier; }
+    public double getNightWaterMovementEfficiencyAddition() { return nightWaterMovementEfficiencyAddition; }
+    public double getNightWaterMovementEfficiencyMultiplier() { return nightWaterMovementEfficiencyMultiplier; }
 
     // Геттеры для пещерных настроек
     public double getCaveHealthAddition() { return caveHealthAddition; }
@@ -415,8 +579,21 @@ public class DimensionConfig {
     public double getCaveLuckMultiplier() { return caveLuckMultiplier; }
     public double getCaveSwimSpeedAddition() { return caveSwimSpeedAddition; }
     public double getCaveSwimSpeedMultiplier() { return caveSwimSpeedMultiplier; }
-    public double getCaveReachDistanceAddition() { return caveReachDistanceAddition; }
-    public double getCaveReachDistanceMultiplier() { return caveReachDistanceMultiplier; }
+    public double getCaveBlockReachAddition() { return caveBlockReachAddition; }
+    public double getCaveBlockReachMultiplier() { return caveBlockReachMultiplier; }
+    public double getCaveEntityReachAddition() { return caveEntityReachAddition; }
+    public double getCaveEntityReachMultiplier() { return caveEntityReachMultiplier; }
+    public double getCaveBurningTimeAddition() { return caveBurningTimeAddition; }
+    public double getCaveBurningTimeMultiplier() { return caveBurningTimeMultiplier; }
+    public double getCaveExplosionKnockbackResistanceAddition() { return caveExplosionKnockbackResistanceAddition; }
+    public double getCaveExplosionKnockbackResistanceMultiplier() { return caveExplosionKnockbackResistanceMultiplier; }
+    public double getCaveFallDamageMultiplier() { return caveFallDamageMultiplier; }
+    public double getCaveOxygenBonusAddition() { return caveOxygenBonusAddition; }
+    public double getCaveOxygenBonusMultiplier() { return caveOxygenBonusMultiplier; }
+    public double getCaveSafeFallDistanceAddition() { return caveSafeFallDistanceAddition; }
+    public double getCaveSafeFallDistanceMultiplier() { return caveSafeFallDistanceMultiplier; }
+    public double getCaveWaterMovementEfficiencyAddition() { return caveWaterMovementEfficiencyAddition; }
+    public double getCaveWaterMovementEfficiencyMultiplier() { return caveWaterMovementEfficiencyMultiplier; }
     // Геттеры для черных списков
     public List<String> getModBlacklist() { return modBlacklist; }
     public List<String> getEntityBlacklist() { return entityBlacklist; }
