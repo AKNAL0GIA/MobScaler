@@ -8,10 +8,6 @@ import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -183,7 +179,6 @@ public class IndividualMobConfigManager {
                     attributesJson.addProperty("caveHeight", attributes.getCaveHeight());
                     attributesJson.addProperty("enableGravity", attributes.isGravityEnabled());
                     attributesJson.addProperty("gravityMultiplier", attributes.getGravityMultiplier()); 
-                    // Сохраняем базовые атрибуты
                     attributesJson.addProperty("healthAddition", attributes.getHealthAddition());
                     attributesJson.addProperty("healthMultiplier", attributes.getHealthMultiplier());
                     attributesJson.addProperty("armorAddition", attributes.getArmorAddition());
@@ -202,16 +197,28 @@ public class IndividualMobConfigManager {
                     attributesJson.addProperty("followRangeMultiplier", attributes.getFollowRangeMultiplier());
                     attributesJson.addProperty("flyingSpeedAddition", attributes.getFlyingSpeedAddition());
                     attributesJson.addProperty("flyingSpeedMultiplier", attributes.getFlyingSpeedMultiplier());
-                    
-                    // Добавляем дополнительные атрибуты
                     attributesJson.addProperty("armorToughnessAddition", attributes.getArmorToughnessAddition());
                     attributesJson.addProperty("armorToughnessMultiplier", attributes.getArmorToughnessMultiplier());
                     attributesJson.addProperty("luckAddition", attributes.getLuckAddition());
                     attributesJson.addProperty("luckMultiplier", attributes.getLuckMultiplier());
                     attributesJson.addProperty("swimSpeedAddition", attributes.getSwimSpeedAddition());
                     attributesJson.addProperty("swimSpeedMultiplier", attributes.getSwimSpeedMultiplier());
-                    attributesJson.addProperty("reachDistanceAddition", attributes.getReachDistanceAddition());
-                    attributesJson.addProperty("reachDistanceMultiplier", attributes.getReachDistanceMultiplier());
+                    attributesJson.addProperty("BlockreachDistanceAddition", attributes.getBlockReachAddition());
+                    attributesJson.addProperty("BlockreachDistanceMultiplier", attributes.getBlockReachMultiplier());
+                    attributesJson.addProperty("EntityReachDistanceAddition", attributes.getEntityReachAddition());
+                    attributesJson.addProperty("EntityReachDistanceMultiplier", attributes.getEntityReachMultiplier());
+                    attributesJson.addProperty("BurningTimeAddition", attributes.getBurningTimeAddition());
+                    attributesJson.addProperty("BurningTimeMultiplier", attributes.getBurningTimeMultiplier());
+                    attributesJson.addProperty("ExplosionKnockbackResistanceAddition", attributes.getExplosionKnockbackResistanceAddition());
+                    attributesJson.addProperty("ExplosionKnockbackResistanceMultiplier", attributes.getExplosionKnockbackResistanceMultiplier());
+                    attributesJson.addProperty("FallDamageMultiplier", attributes.getFallDamageMultiplier());
+                    attributesJson.addProperty("OxygenBonusAddition", attributes.getOxygenBonusAddition());
+                    attributesJson.addProperty("OxygenBonusMultiplier", attributes.getOxygenBonusMultiplier());
+                    attributesJson.addProperty("SafeFallDistanceAddition", attributes.getSafeFallDistanceAddition());
+                    attributesJson.addProperty("SafeFallDistanceMultiplier", attributes.getSafeFallDistanceMultiplier());
+                    attributesJson.addProperty("WaterMovementEfficiencyAddition", attributes.getWaterMovementEfficiencyAddition());
+                    attributesJson.addProperty("WaterMovementEfficiencyMultiplier", attributes.getWaterMovementEfficiencyMultiplier());
+
                     
                     // Сохраняем ночные атрибуты
                     attributesJson.addProperty("nightHealthAddition", attributes.getNightHealthAddition());
@@ -232,17 +239,28 @@ public class IndividualMobConfigManager {
                     attributesJson.addProperty("nightFollowRangeMultiplier", attributes.getNightFollowRangeMultiplier());
                     attributesJson.addProperty("nightFlyingSpeedAddition", attributes.getNightFlyingSpeedAddition());
                     attributesJson.addProperty("nightFlyingSpeedMultiplier", attributes.getNightFlyingSpeedMultiplier());
-                    
-                    // Добавляем ночные дополнительные атрибуты
                     attributesJson.addProperty("nightArmorToughnessAddition", attributes.getNightArmorToughnessAddition());
                     attributesJson.addProperty("nightArmorToughnessMultiplier", attributes.getNightArmorToughnessMultiplier());
                     attributesJson.addProperty("nightLuckAddition", attributes.getNightLuckAddition());
                     attributesJson.addProperty("nightLuckMultiplier", attributes.getNightLuckMultiplier());
                     attributesJson.addProperty("nightSwimSpeedAddition", attributes.getNightSwimSpeedAddition());
                     attributesJson.addProperty("nightSwimSpeedMultiplier", attributes.getNightSwimSpeedMultiplier());
-                    attributesJson.addProperty("nightReachDistanceAddition", attributes.getNightReachDistanceAddition());
-                    attributesJson.addProperty("nightReachDistanceMultiplier", attributes.getNightReachDistanceMultiplier());
-                    
+                    attributesJson.addProperty("nightBlockreachDistanceAddition", attributes.getNightBlockReachAddition());
+                    attributesJson.addProperty("nightBlockreachDistanceMultiplier", attributes.getNightBlockReachMultiplier());
+                    attributesJson.addProperty("nightEntityReachDistanceAddition", attributes.getNightEntityReachAddition());
+                    attributesJson.addProperty("nightEntityReachDistanceMultiplier", attributes.getNightEntityReachMultiplier());
+                    attributesJson.addProperty("nightBurningTimeAddition", attributes.getNightBurningTimeAddition());
+                    attributesJson.addProperty("nightBurningTimeMultiplier", attributes.getNightBurningTimeMultiplier());
+                    attributesJson.addProperty("nightExplosionKnockbackResistanceAddition", attributes.getNightExplosionKnockbackResistanceAddition());
+                    attributesJson.addProperty("nightExplosionKnockbackResistanceMultiplier", attributes.getNightExplosionKnockbackResistanceMultiplier());
+                    attributesJson.addProperty("nightFallDamageMultiplier", attributes.getNightFallDamageMultiplier());
+                    attributesJson.addProperty("nightOxygenBonusAddition", attributes.getNightOxygenBonusAddition());
+                    attributesJson.addProperty("nightOxygenBonusMultiplier", attributes.getNightOxygenBonusMultiplier());
+                    attributesJson.addProperty("nightSafeFallDistanceAddition", attributes.getNightSafeFallDistanceAddition());
+                    attributesJson.addProperty("nightSafeFallDistanceMultiplier", attributes.getNightSafeFallDistanceMultiplier());
+                    attributesJson.addProperty("nightWaterMovementEfficiencyAddition", attributes.getNightWaterMovementEfficiencyAddition());
+                    attributesJson.addProperty("nightWaterMovementEfficiencyMultiplier", attributes.getNightWaterMovementEfficiencyMultiplier());
+
                     // Сохраняем пещерные атрибуты
                     attributesJson.addProperty("caveHealthAddition", attributes.getCaveHealthAddition());
                     attributesJson.addProperty("caveHealthMultiplier", attributes.getCaveHealthMultiplier());
@@ -262,16 +280,28 @@ public class IndividualMobConfigManager {
                     attributesJson.addProperty("caveFollowRangeMultiplier", attributes.getCaveFollowRangeMultiplier());
                     attributesJson.addProperty("caveFlyingSpeedAddition", attributes.getCaveFlyingSpeedAddition());
                     attributesJson.addProperty("caveFlyingSpeedMultiplier", attributes.getCaveFlyingSpeedMultiplier());
-                    
-                    // Добавляем пещерные дополнительные атрибуты
                     attributesJson.addProperty("caveArmorToughnessAddition", attributes.getCaveArmorToughnessAddition());
                     attributesJson.addProperty("caveArmorToughnessMultiplier", attributes.getCaveArmorToughnessMultiplier());
                     attributesJson.addProperty("caveLuckAddition", attributes.getCaveLuckAddition());
                     attributesJson.addProperty("caveLuckMultiplier", attributes.getCaveLuckMultiplier());
                     attributesJson.addProperty("caveSwimSpeedAddition", attributes.getCaveSwimSpeedAddition());
                     attributesJson.addProperty("caveSwimSpeedMultiplier", attributes.getCaveSwimSpeedMultiplier());
-                    attributesJson.addProperty("caveReachDistanceAddition", attributes.getCaveReachDistanceAddition());
-                    attributesJson.addProperty("caveReachDistanceMultiplier", attributes.getCaveReachDistanceMultiplier());
+                    attributesJson.addProperty("caveBlockreachDistanceAddition", attributes.getCaveBlockReachAddition());
+                    attributesJson.addProperty("caveBlockreachDistanceMultiplier", attributes.getCaveBlockReachMultiplier());
+                    attributesJson.addProperty("caveEntityReachDistanceAddition", attributes.getCaveEntityReachAddition());
+                    attributesJson.addProperty("caveEntityReachDistanceMultiplier", attributes.getCaveEntityReachMultiplier());
+                    attributesJson.addProperty("caveBurningTimeAddition", attributes.getCaveBurningTimeAddition());
+                    attributesJson.addProperty("caveBurningTimeMultiplier", attributes.getCaveBurningTimeMultiplier());
+                    attributesJson.addProperty("caveExplosionKnockbackResistanceAddition", attributes.getCaveExplosionKnockbackResistanceAddition());
+                    attributesJson.addProperty("caveExplosionKnockbackResistanceMultiplier", attributes.getCaveExplosionKnockbackResistanceMultiplier());
+                    attributesJson.addProperty("caveFallDamageMultiplier", attributes.getCaveFallDamageMultiplier());
+                    attributesJson.addProperty("caveOxygenBonusAddition", attributes.getCaveOxygenBonusAddition());
+                    attributesJson.addProperty("caveOxygenBonusMultiplier", attributes.getCaveOxygenBonusMultiplier());
+                    attributesJson.addProperty("caveSafeFallDistanceAddition", attributes.getCaveSafeFallDistanceAddition());
+                    attributesJson.addProperty("caveSafeFallDistanceMultiplier", attributes.getCaveSafeFallDistanceMultiplier());
+                    attributesJson.addProperty("caveWaterMovementEfficiencyAddition", attributes.getCaveWaterMovementEfficiencyAddition());
+                    attributesJson.addProperty("caveWaterMovementEfficiencyMultiplier", attributes.getCaveWaterMovementEfficiencyMultiplier());
+
                     
                     mobConfig.add("attributes", attributesJson);
                     mobs.add(entry.getKey(), mobConfig);
@@ -303,7 +333,6 @@ public class IndividualMobConfigManager {
                 attributesJson.addProperty("enableCaveScaling", attributes.getEnableCaveScaling());
                 attributesJson.addProperty("enableGravity", attributes.isGravityEnabled());
                 attributesJson.addProperty("gravityMultiplier", attributes.getGravityMultiplier());
-                // Сохраняем базовые атрибуты
                 attributesJson.addProperty("healthAddition", attributes.getHealthAddition());
                 attributesJson.addProperty("healthMultiplier", attributes.getHealthMultiplier());
                 attributesJson.addProperty("armorAddition", attributes.getArmorAddition());
@@ -322,16 +351,27 @@ public class IndividualMobConfigManager {
                 attributesJson.addProperty("followRangeMultiplier", attributes.getFollowRangeMultiplier());
                 attributesJson.addProperty("flyingSpeedAddition", attributes.getFlyingSpeedAddition());
                 attributesJson.addProperty("flyingSpeedMultiplier", attributes.getFlyingSpeedMultiplier());
-                
-                // Добавляем дополнительные атрибуты
                 attributesJson.addProperty("armorToughnessAddition", attributes.getArmorToughnessAddition());
                 attributesJson.addProperty("armorToughnessMultiplier", attributes.getArmorToughnessMultiplier());
                 attributesJson.addProperty("luckAddition", attributes.getLuckAddition());
                 attributesJson.addProperty("luckMultiplier", attributes.getLuckMultiplier());
                 attributesJson.addProperty("swimSpeedAddition", attributes.getSwimSpeedAddition());
                 attributesJson.addProperty("swimSpeedMultiplier", attributes.getSwimSpeedMultiplier());
-                attributesJson.addProperty("reachDistanceAddition", attributes.getReachDistanceAddition());
-                attributesJson.addProperty("reachDistanceMultiplier", attributes.getReachDistanceMultiplier());
+                attributesJson.addProperty("BlockreachDistanceAddition", attributes.getBlockReachAddition());
+                attributesJson.addProperty("BlockreachDistanceMultiplier", attributes.getBlockReachMultiplier());
+                attributesJson.addProperty("EntityReachDistanceAddition", attributes.getEntityReachAddition());
+                attributesJson.addProperty("EntityReachDistanceMultiplier", attributes.getEntityReachMultiplier());
+                attributesJson.addProperty("BurningTimeAddition", attributes.getBurningTimeAddition());
+                attributesJson.addProperty("BurningTimeMultiplier", attributes.getBurningTimeMultiplier());
+                attributesJson.addProperty("ExplosionKnockbackResistanceAddition", attributes.getExplosionKnockbackResistanceAddition());
+                attributesJson.addProperty("ExplosionKnockbackResistanceMultiplier", attributes.getExplosionKnockbackResistanceMultiplier());
+                attributesJson.addProperty("FallDamageMultiplier", attributes.getFallDamageMultiplier());
+                attributesJson.addProperty("OxygenBonusAddition", attributes.getOxygenBonusAddition());
+                attributesJson.addProperty("OxygenBonusMultiplier", attributes.getOxygenBonusMultiplier());
+                attributesJson.addProperty("SafeFallDistanceAddition", attributes.getSafeFallDistanceAddition());
+                attributesJson.addProperty("SafeFallDistanceMultiplier", attributes.getSafeFallDistanceMultiplier());
+                attributesJson.addProperty("WaterMovementEfficiencyAddition", attributes.getWaterMovementEfficiencyAddition());
+                attributesJson.addProperty("WaterMovementEfficiencyMultiplier", attributes.getWaterMovementEfficiencyMultiplier());
                 
                 // Сохраняем ночные атрибуты
                 attributesJson.addProperty("nightHealthAddition", attributes.getNightHealthAddition());
@@ -352,16 +392,27 @@ public class IndividualMobConfigManager {
                 attributesJson.addProperty("nightFollowRangeMultiplier", attributes.getNightFollowRangeMultiplier());
                 attributesJson.addProperty("nightFlyingSpeedAddition", attributes.getNightFlyingSpeedAddition());
                 attributesJson.addProperty("nightFlyingSpeedMultiplier", attributes.getNightFlyingSpeedMultiplier());
-                
-                // Добавляем ночные дополнительные атрибуты
                 attributesJson.addProperty("nightArmorToughnessAddition", attributes.getNightArmorToughnessAddition());
                 attributesJson.addProperty("nightArmorToughnessMultiplier", attributes.getNightArmorToughnessMultiplier());
                 attributesJson.addProperty("nightLuckAddition", attributes.getNightLuckAddition());
                 attributesJson.addProperty("nightLuckMultiplier", attributes.getNightLuckMultiplier());
                 attributesJson.addProperty("nightSwimSpeedAddition", attributes.getNightSwimSpeedAddition());
                 attributesJson.addProperty("nightSwimSpeedMultiplier", attributes.getNightSwimSpeedMultiplier());
-                attributesJson.addProperty("nightReachDistanceAddition", attributes.getNightReachDistanceAddition());
-                attributesJson.addProperty("nightReachDistanceMultiplier", attributes.getNightReachDistanceMultiplier());
+                attributesJson.addProperty("nightBlockreachDistanceAddition", attributes.getNightBlockReachAddition());
+                attributesJson.addProperty("nightBlockreachDistanceMultiplier", attributes.getNightBlockReachMultiplier());
+                attributesJson.addProperty("nightEntityReachDistanceAddition", attributes.getNightEntityReachAddition());
+                attributesJson.addProperty("nightEntityReachDistanceMultiplier", attributes.getNightEntityReachMultiplier());
+                attributesJson.addProperty("nightBurningTimeAddition", attributes.getNightBurningTimeAddition());
+                attributesJson.addProperty("nightBurningTimeMultiplier", attributes.getNightBurningTimeMultiplier());
+                attributesJson.addProperty("nightExplosionKnockbackResistanceAddition", attributes.getNightExplosionKnockbackResistanceAddition());
+                attributesJson.addProperty("nightExplosionKnockbackResistanceMultiplier", attributes.getNightExplosionKnockbackResistanceMultiplier());
+                attributesJson.addProperty("nightFallDamageMultiplier", attributes.getNightFallDamageMultiplier());
+                attributesJson.addProperty("nightOxygenBonusAddition", attributes.getNightOxygenBonusAddition());
+                attributesJson.addProperty("nightOxygenBonusMultiplier", attributes.getNightOxygenBonusMultiplier());
+                attributesJson.addProperty("nightSafeFallDistanceAddition", attributes.getNightSafeFallDistanceAddition());
+                attributesJson.addProperty("nightSafeFallDistanceMultiplier", attributes.getNightSafeFallDistanceMultiplier());
+                attributesJson.addProperty("nightWaterMovementEfficiencyAddition", attributes.getNightWaterMovementEfficiencyAddition());
+                attributesJson.addProperty("nightWaterMovementEfficiencyMultiplier", attributes.getNightWaterMovementEfficiencyMultiplier());
                 
                 // Сохраняем пещерные атрибуты
                 attributesJson.addProperty("caveHealthAddition", attributes.getCaveHealthAddition());
@@ -390,8 +441,21 @@ public class IndividualMobConfigManager {
                 attributesJson.addProperty("caveLuckMultiplier", attributes.getCaveLuckMultiplier());
                 attributesJson.addProperty("caveSwimSpeedAddition", attributes.getCaveSwimSpeedAddition());
                 attributesJson.addProperty("caveSwimSpeedMultiplier", attributes.getCaveSwimSpeedMultiplier());
-                attributesJson.addProperty("caveReachDistanceAddition", attributes.getCaveReachDistanceAddition());
-                attributesJson.addProperty("caveReachDistanceMultiplier", attributes.getCaveReachDistanceMultiplier());
+                attributesJson.addProperty("caveBlockreachDistanceAddition", attributes.getCaveBlockReachAddition());
+                attributesJson.addProperty("caveBlockreachDistanceMultiplier", attributes.getCaveBlockReachMultiplier());
+                attributesJson.addProperty("caveEntityReachDistanceAddition", attributes.getCaveEntityReachAddition());
+                attributesJson.addProperty("caveEntityReachDistanceMultiplier", attributes.getCaveEntityReachMultiplier());
+                attributesJson.addProperty("caveBurningTimeAddition", attributes.getCaveBurningTimeAddition());
+                attributesJson.addProperty("caveBurningTimeMultiplier", attributes.getCaveBurningTimeMultiplier());
+                attributesJson.addProperty("caveExplosionKnockbackResistanceAddition", attributes.getCaveExplosionKnockbackResistanceAddition());
+                attributesJson.addProperty("caveExplosionKnockbackResistanceMultiplier", attributes.getCaveExplosionKnockbackResistanceMultiplier());
+                attributesJson.addProperty("caveFallDamageMultiplier", attributes.getCaveFallDamageMultiplier());
+                attributesJson.addProperty("caveOxygenBonusAddition", attributes.getCaveOxygenBonusAddition());
+                attributesJson.addProperty("caveOxygenBonusMultiplier", attributes.getCaveOxygenBonusMultiplier());
+                attributesJson.addProperty("caveSafeFallDistanceAddition", attributes.getCaveSafeFallDistanceAddition());
+                attributesJson.addProperty("caveSafeFallDistanceMultiplier", attributes.getCaveSafeFallDistanceMultiplier());
+                attributesJson.addProperty("caveWaterMovementEfficiencyAddition", attributes.getCaveWaterMovementEfficiencyAddition());
+                attributesJson.addProperty("caveWaterMovementEfficiencyMultiplier", attributes.getCaveWaterMovementEfficiencyMultiplier());
                 
                 modConfig.add("attributes", attributesJson);
                 mods.add(modId, modConfig);
@@ -544,8 +608,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "luckMultiplier", 1.0),
             getDouble(attributesJson, "swimSpeedAddition", 0.0),
             getDouble(attributesJson, "swimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "reachDistanceAddition", 0.0),
-            getDouble(attributesJson, "reachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "blockReachAddition", 0.0),
+            getDouble(attributesJson, "blockReachMultiplier", 1.0),
+            getDouble(attributesJson, "entityReachAddition", 0.0),
+            getDouble(attributesJson, "entityReachMultiplier", 1.0),
+            getDouble(attributesJson, "burningTimeAddition", 0.0),
+            getDouble(attributesJson, "burningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "explosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "explosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "fallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "oxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "oxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "safeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "safeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "waterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "waterMovementEfficiencyMultiplier", 1.0),
             // Ночные атрибуты
             getDouble(attributesJson, "nightHealthAddition", 0.0),
             getDouble(attributesJson, "nightHealthMultiplier", 1.0),
@@ -571,8 +648,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "nightLuckMultiplier", 1.0),
             getDouble(attributesJson, "nightSwimSpeedAddition", 0.0),
             getDouble(attributesJson, "nightSwimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "nightReachDistanceAddition", 0.0),
-            getDouble(attributesJson, "nightReachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightBlockReachAddition", 0.0),
+            getDouble(attributesJson, "nightBlockReachMultiplier", 1.0),
+            getDouble(attributesJson, "nightEntityReachAddition", 0.0),
+            getDouble(attributesJson, "nightEntityReachMultiplier", 1.0),
+            getDouble(attributesJson, "nightBurningTimeAddition", 0.0),
+            getDouble(attributesJson, "nightBurningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "nightExplosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "nightExplosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightFallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "nightOxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "nightOxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "nightSafeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "nightSafeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightWaterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "nightWaterMovementEfficiencyMultiplier", 1.0),
             // Пещерные атрибуты
             getDouble(attributesJson, "caveHealthAddition", 0.0),
             getDouble(attributesJson, "caveHealthMultiplier", 1.0),
@@ -598,8 +688,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "caveLuckMultiplier", 1.0),
             getDouble(attributesJson, "caveSwimSpeedAddition", 0.0),
             getDouble(attributesJson, "caveSwimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "caveReachDistanceAddition", 0.0),
-            getDouble(attributesJson, "caveReachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveBlockReachAddition", 0.0),
+            getDouble(attributesJson, "caveBlockReachMultiplier", 1.0),
+            getDouble(attributesJson, "caveEntityReachAddition", 0.0),
+            getDouble(attributesJson, "caveEntityReachMultiplier", 1.0),
+            getDouble(attributesJson, "caveBurningTimeAddition", 0.0),
+            getDouble(attributesJson, "caveBurningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "caveExplosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "caveExplosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveFallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "caveOxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "caveOxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "caveSafeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "caveSafeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveWaterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "caveWaterMovementEfficiencyMultiplier", 1.0),
             blacklisted
         );
 
@@ -639,8 +742,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "luckMultiplier", 1.0),
             getDouble(attributesJson, "swimSpeedAddition", 0.0),
             getDouble(attributesJson, "swimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "reachDistanceAddition", 0.0),
-            getDouble(attributesJson, "reachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "blockReachAddition", 0.0),
+            getDouble(attributesJson, "blockReachMultiplier", 1.0),
+            getDouble(attributesJson, "entityReachAddition", 0.0),
+            getDouble(attributesJson, "entityReachMultiplier", 1.0),
+            getDouble(attributesJson, "burningTimeAddition", 0.0),
+            getDouble(attributesJson, "burningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "explosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "explosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "fallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "oxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "oxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "safeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "safeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "waterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "waterMovementEfficiencyMultiplier", 1.0),
             // Ночные атрибуты
             getDouble(attributesJson, "nightHealthAddition", 0.0),
             getDouble(attributesJson, "nightHealthMultiplier", 1.0),
@@ -666,8 +782,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "nightLuckMultiplier", 1.0),
             getDouble(attributesJson, "nightSwimSpeedAddition", 0.0),
             getDouble(attributesJson, "nightSwimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "nightReachDistanceAddition", 0.0),
-            getDouble(attributesJson, "nightReachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightBlockReachAddition", 0.0),
+            getDouble(attributesJson, "nightBlockReachMultiplier", 1.0),
+            getDouble(attributesJson, "nightEntityReachAddition", 0.0),
+            getDouble(attributesJson, "nightEntityReachMultiplier", 1.0),
+            getDouble(attributesJson, "nightBurningTimeAddition", 0.0),
+            getDouble(attributesJson, "nightBurningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "nightExplosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "nightExplosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightFallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "nightOxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "nightOxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "nightSafeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "nightSafeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "nightWaterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "nightWaterMovementEfficiencyMultiplier", 1.0),
             // Пещерные атрибуты
             getDouble(attributesJson, "caveHealthAddition", 0.0),
             getDouble(attributesJson, "caveHealthMultiplier", 1.0),
@@ -693,8 +822,21 @@ public class IndividualMobConfigManager {
             getDouble(attributesJson, "caveLuckMultiplier", 1.0),
             getDouble(attributesJson, "caveSwimSpeedAddition", 0.0),
             getDouble(attributesJson, "caveSwimSpeedMultiplier", 1.0),
-            getDouble(attributesJson, "caveReachDistanceAddition", 0.0),
-            getDouble(attributesJson, "caveReachDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveBlockReachAddition", 0.0),
+            getDouble(attributesJson, "caveBlockReachMultiplier", 1.0),
+            getDouble(attributesJson, "caveEntityReachAddition", 0.0),
+            getDouble(attributesJson, "caveEntityReachMultiplier", 1.0),
+            getDouble(attributesJson, "caveBurningTimeAddition", 0.0),
+            getDouble(attributesJson, "caveBurningTimeMultiplier", 1.0),
+            getDouble(attributesJson, "caveExplosionKnockbackResistanceAddition", 0.0),
+            getDouble(attributesJson, "caveExplosionKnockbackResistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveFallDamageMultiplier", 1.0),
+            getDouble(attributesJson, "caveOxygenBonusAddition", 0.0),
+            getDouble(attributesJson, "caveOxygenBonusMultiplier", 1.0),
+            getDouble(attributesJson, "caveSafeFallDistanceAddition", 0.0),
+            getDouble(attributesJson, "caveSafeFallDistanceMultiplier", 1.0),
+            getDouble(attributesJson, "caveWaterMovementEfficiencyAddition", 0.0),
+            getDouble(attributesJson, "caveWaterMovementEfficiencyMultiplier", 1.0),
             false // blacklisted
         );
     }

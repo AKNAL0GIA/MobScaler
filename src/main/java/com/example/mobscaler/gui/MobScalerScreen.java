@@ -6,7 +6,6 @@ import com.example.mobscaler.config.IndividualMobManager;
 import com.example.mobscaler.config.DimensionConfig;
 import com.example.mobscaler.config.DimensionConfigManager;
 import com.example.mobscaler.config.MobScalerConfig;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -39,6 +38,9 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.Difficulty;
+import com.example.mobscaler.events.EntityHandler;
 
 
 public class MobScalerScreen extends Screen {
@@ -70,6 +72,10 @@ public class MobScalerScreen extends Screen {
     private static final int FIELD_WIDTH = 35;     // Ширина полей ввода
     private static final int SPACING = 10;         // Отступ между элементами
     
+    // Класс для хранения данных атрибута игрока
+    private record PlayerAttributeData(String label, String additionField, double additionValue,
+                                       String multiplierField, double multiplierValue) {}
+
     // Класс для сопоставления полей ввода с полями конфигурации
     private static class FieldMapping {
         private final String fieldName;
@@ -113,25 +119,27 @@ public class MobScalerScreen extends Screen {
         private final int hoverColor;
         
         public StyledButton(int x, int y, int width, int height, Component message, OnPress onPress, int defaultColor, int hoverColor) {
-            super(x, y, width, height, message, onPress);
+            super(net.minecraft.client.gui.components.Button.builder(message, onPress)
+                .pos(x, y)
+                .size(width, height));
             this.defaultColor = defaultColor;
             this.hoverColor = hoverColor;
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             if (defaultColor != 0x00000000) {
                 int color = isHovered ? hoverColor : defaultColor;
-                fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, color);
+                guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, color);
             }
             int textWidth = Minecraft.getInstance().font.width(this.getMessage());
-            int textX = this.x + (this.width - textWidth) / 2;
-            drawString(poseStack, Minecraft.getInstance().font, this.getMessage(), textX, this.y + (this.height - 8) / 2, TEXT_COLOR);
+            int textX = this.getX() + (this.width - textWidth) / 2;
+            guiGraphics.drawString(Minecraft.getInstance().font, this.getMessage(), textX, this.getY() + (this.height - 8) / 2, TEXT_COLOR);
         }
     }
     
     private enum TabType {
-        MODS, INDIVIDUAL_MOBS, DIMENSIONS, DIFFICULTY, PLAYER
+        MODS, INDIVIDUAL_MOBS, DIMENSIONS, PLAYER, SETTINGS
     }
     private enum AttributeDisplayType {
         BASIC, ADVANCED
@@ -170,7 +178,9 @@ public class MobScalerScreen extends Screen {
         private final Component label;
         
         public CheckBox(int x, int y, int width, int height, Component label, boolean initialState, OnPress onPress) {
-            super(x, y, width, height, Component.literal(""), onPress);
+            super(net.minecraft.client.gui.components.Button.builder(label, onPress)
+                .pos(x, y)
+                .size(width, height));
             this.label = label;
             this.checked = initialState;
         }
@@ -184,12 +194,12 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            fill(poseStack, this.x, this.y, this.x + 10, this.y + 10, isHovered ? CHECKBOX_UNCHECKED_COLOR : 0xFF888888);
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + 10, this.getY() + 10, isHovered ? CHECKBOX_UNCHECKED_COLOR : 0xFF888888);
             if (checked) {
-                fill(poseStack, this.x + 2, this.y + 2, this.x + 8, this.y + 8, CHECKBOX_CHECKED_COLOR);
+                guiGraphics.fill(this.getX() + 2, this.getY() + 2, this.getX() + 8, this.getY() + 8, CHECKBOX_CHECKED_COLOR);
             }
-            drawString(poseStack, Minecraft.getInstance().font, label, this.x + 15, this.y + 2, TEXT_COLOR);
+            guiGraphics.drawString(Minecraft.getInstance().font, label, this.getX() + 15, this.getY() + 2, TEXT_COLOR);
         }
         
         @Override
@@ -212,7 +222,7 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput narrationElementOutput) {
+        public void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput narrationElementOutput) {
             defaultButtonNarrationText(narrationElementOutput);
         }
 
@@ -222,7 +232,7 @@ public class MobScalerScreen extends Screen {
         }
 
         private void updateButtonPositions() {
-            int currentY = y - (int)scrollAmount;
+            int currentY = this.getY() - (int)scrollAmount;
             for (int i = 0; i < buttons.size(); i++) {
                 Button button = buttons.get(i);
                 
@@ -231,14 +241,14 @@ public class MobScalerScreen extends Screen {
                 
                 if (isModButton) {
                     // Кнопка мода
-                    button.x = x;
-                    button.y = currentY;
+                    button.setX(this.getX());
+                    button.setY(currentY);
                     
                     // Если есть соответствующая кнопка удаления
                     if (i + 1 < buttons.size()) {
                         Button deleteButton = buttons.get(i + 1);
-                        deleteButton.x = x + 175 + 5;
-                        deleteButton.y = currentY;
+                        deleteButton.setX(this.getX() + 175 + 5);
+                        deleteButton.setY(currentY);
                     }
                     
                     currentY += BUTTON_HEIGHT;
@@ -247,21 +257,21 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            // Отрисовка фона панели
-            fill(poseStack, x, y, x + width, y + height, 0x80000000);
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отрисовка фона панели — полупрозрачный
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x60101010);
 
             // Настраиваем область отсечения
             double scale = Minecraft.getInstance().getWindow().getGuiScale();
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor((int)(x * scale), (int)((Minecraft.getInstance().getWindow().getHeight() - (y + height) * scale)),
-                          (int)(width * scale), (int)(height * scale));
+            GL11.glScissor((int)(this.getX() * scale), (int)((Minecraft.getInstance().getWindow().getHeight() - (this.getY() + this.getHeight()) * scale)),
+                          (int)(this.getWidth() * scale), (int)(this.getHeight() * scale));
 
             // Отрисовка кнопок
             for (Button button : buttons) {
-                if (button.y + BUTTON_HEIGHT >= y && button.y <= y + height) {
+                if (button.getY() + BUTTON_HEIGHT >= this.getY() && button.getY() <= this.getY() + this.getHeight()) {
                     // Корректируем позицию мыши для правильного определения наведения
-                    button.render(poseStack, mouseX, mouseY, partialTick);
+                    button.render(guiGraphics, mouseX, mouseY, partialTick);
                 }
             }
 
@@ -269,10 +279,10 @@ public class MobScalerScreen extends Screen {
             if ((buttons.size() / 2) * BUTTON_HEIGHT > height) {
                 double contentHeight = (buttons.size() / 2) * BUTTON_HEIGHT;
                 double scrollBarHeight = height * (height / contentHeight);
-                double scrollBarY = y + (scrollAmount / contentHeight) * (height - scrollBarHeight);
+                double scrollBarY = this.getY() + (scrollAmount / contentHeight) * (height - scrollBarHeight);
                 
-                fill(poseStack, x + width - SCROLLBAR_WIDTH, y, x + width, y + height, 0x40000000);
-                fill(poseStack, x + width - SCROLLBAR_WIDTH, (int)scrollBarY, x + width, 
+                guiGraphics.fill(this.getX() + this.getWidth() - SCROLLBAR_WIDTH, this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x40000000);
+                guiGraphics.fill(this.getX() + this.getWidth() - SCROLLBAR_WIDTH, (int)scrollBarY, this.getX() + this.getWidth(), 
                      (int)(scrollBarY + scrollBarHeight), 0x80FFFFFF);
             }
 
@@ -283,7 +293,7 @@ public class MobScalerScreen extends Screen {
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (isMouseOver(mouseX, mouseY)) {
                 // Проверяем клик на полосе прокрутки
-                if (mouseX >= x + width - SCROLLBAR_WIDTH && mouseX <= x + width) {
+                if (mouseX >= this.getX() + this.getWidth() - SCROLLBAR_WIDTH && mouseX <= this.getX() + this.getWidth()) {
                     isDragging = true;
                     return true;
                 }
@@ -291,8 +301,8 @@ public class MobScalerScreen extends Screen {
                 // Проверяем клики по кнопкам с учетом прокрутки
                 double adjustedMouseY = mouseY + scrollAmount;
                 for (Button b : buttons) {
-                    if (mouseX >= b.x && mouseX <= b.x + b.getWidth() &&
-                        adjustedMouseY >= b.y + scrollAmount && adjustedMouseY <= b.y + b.getHeight() + scrollAmount) {
+                    if (mouseX >= b.getX() && mouseX <= b.getX() + b.getWidth() &&
+                        adjustedMouseY >= b.getY() + scrollAmount && adjustedMouseY <= b.getY() + b.getHeight() + scrollAmount) {
                         return b.mouseClicked(mouseX, mouseY, button);
                     }
                 }
@@ -312,12 +322,12 @@ public class MobScalerScreen extends Screen {
         public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
             if (isDragging) {
                 // Проверяем, находится ли курсор над полосой прокрутки
-                if (mouseX >= x + width - SCROLLBAR_WIDTH && mouseX <= x + width) {
+                if (mouseX >= this.getX() + this.getWidth() - SCROLLBAR_WIDTH && mouseX <= this.getX() + this.getWidth()) {
                     double contentHeight = (buttons.size() / 2) * BUTTON_HEIGHT;
                     double maxScroll = Math.max(0, contentHeight - height);
                     
                     // Вычисляем новую позицию прокрутки на основе позиции курсора
-                    double mouseRelativeY = mouseY - y;
+                    double mouseRelativeY = mouseY - this.getY();
                     double scrollPercentage = mouseRelativeY / height;
                     scrollAmount = maxScroll * scrollPercentage;
                     
@@ -337,10 +347,10 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (isMouseOver(mouseX, mouseY)) {
                 double maxScroll = Math.max(0, (buttons.size() / 2) * BUTTON_HEIGHT - height);
-                scrollAmount = Math.max(0, Math.min(maxScroll, scrollAmount - delta * SCROLL_SPEED));
+                scrollAmount = Math.max(0, Math.min(maxScroll, scrollAmount - scrollDeltaY * SCROLL_SPEED));
                 updateButtonPositions();
                 return true;
             }
@@ -372,11 +382,17 @@ public class MobScalerScreen extends Screen {
         
         // Инициализируем содержимое вкладки
         initTabContent();
-        
+
         addCloseButton();
         addSaveButton();
     }
-    
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // Рисуем только темный полупрозрачный фон без размытия (60% прозрачности)
+        guiGraphics.fill(0, 0, this.width, this.height, 0x99101010);
+    }
+
     private void initializeConfigCopies() {
         // Получаем копии текущих конфигураций
         modConfigsCopy = new HashMap<>(IndividualMobManager.getModConfigs());
@@ -414,7 +430,7 @@ public class MobScalerScreen extends Screen {
             case DIMENSIONS:
                 initDimensionsTabContent();
                 break;
-            case DIFFICULTY:
+            case SETTINGS:
                 initSettingsTabContent();
                 break;
             case PLAYER:
@@ -575,7 +591,20 @@ public class MobScalerScreen extends Screen {
             }
         }
     }
-    
+
+    @Override
+    public void onClose() {
+        // Восстанавливаем оригинальный GUI scale при закрытии экрана
+        int savedScale = com.example.mobscaler.events.KeyHandler.getSavedGuiScale();
+        if (savedScale > 0) {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.guiScale().set(savedScale);
+            mc.resizeDisplay();
+            com.example.mobscaler.events.KeyHandler.setSavedGuiScale(-1);
+        }
+        super.onClose();
+    }
+
     private void initDimensionsTabContent() {
         // Очищаем предыдущие виджеты
         this.clearWidgets();
@@ -752,16 +781,16 @@ public class MobScalerScreen extends Screen {
             this.isCenter = isCenter;
         }
         
-        public void render(PoseStack poseStack, Font font) {
+        public void render(GuiGraphics guiGraphics, Font font) {
             Component textComponent = Component.literal(text);
             if (isBold) {
                 textComponent = textComponent.copy().withStyle(ChatFormatting.BOLD);
             }
             
             if (isCenter) {
-                font.drawShadow(poseStack, textComponent, Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - font.width(textComponent) / 2, y, color);
+                guiGraphics.drawString(font, textComponent, Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - font.width(textComponent) / 2, y, color);
             } else {
-                font.drawShadow(poseStack, textComponent, x, y, color);
+                guiGraphics.drawString(font, textComponent, x, y, color);
             }
         }
     }
@@ -811,31 +840,31 @@ public class MobScalerScreen extends Screen {
         this.tabButtons.add(mobsTabButton);
         
         // Вкладка измерений
-        Button dimensionsTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 2, tabY, tabWidth, tabHeight, 
+        Button dimensionsTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 2, tabY, tabWidth, tabHeight,
                 getTranslatedText("gui.mobscaler.tabs.dimensions"), button -> {
             currentTab = TabType.DIMENSIONS;
             this.init();
         }, currentTab == TabType.DIMENSIONS ? BUTTON_HOVER_COLOR : BUTTON_COLOR, BUTTON_HOVER_COLOR);
         this.addRenderableWidget(dimensionsTabButton);
         this.tabButtons.add(dimensionsTabButton);
-        
-        // Вкладка настроек сложности
-        Button difficultyTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 3, tabY, tabWidth, tabHeight, 
-                getTranslatedText("gui.mobscaler.tabs.difficulty"), button -> {
-            currentTab = TabType.DIFFICULTY;
-            this.init();
-        }, currentTab == TabType.DIFFICULTY ? BUTTON_HOVER_COLOR : BUTTON_COLOR, BUTTON_HOVER_COLOR);
-        this.addRenderableWidget(difficultyTabButton);
-        this.tabButtons.add(difficultyTabButton);
-        
+
         // Вкладка настроек игрока
-        Button playerTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 4, tabY, tabWidth, tabHeight, 
+        Button playerTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 3, tabY, tabWidth, tabHeight,
                 getTranslatedText("gui.mobscaler.tabs.player"), button -> {
             currentTab = TabType.PLAYER;
             this.init();
         }, currentTab == TabType.PLAYER ? BUTTON_HOVER_COLOR : BUTTON_COLOR, BUTTON_HOVER_COLOR);
         this.addRenderableWidget(playerTabButton);
         this.tabButtons.add(playerTabButton);
+
+        // Вкладка настроек (ранее сложность)
+        Button settingsTabButton = new StyledButton(startX + (tabWidth + tabSpacing) * 4, tabY, tabWidth, tabHeight,
+                getTranslatedText("gui.mobscaler.tabs.settings"), button -> {
+            currentTab = TabType.SETTINGS;
+            this.init();
+        }, currentTab == TabType.SETTINGS ? BUTTON_HOVER_COLOR : BUTTON_COLOR, BUTTON_HOVER_COLOR);
+        this.addRenderableWidget(settingsTabButton);
+        this.tabButtons.add(settingsTabButton);
     }
     
     /**
@@ -921,7 +950,7 @@ public class MobScalerScreen extends Screen {
                 mobId
             );
             
-            // Создаем кнопку удаления с повышенным Z-индексом
+            // Создаем кнопку удаления
             Button deleteButton = new StyledButton(
                 currentX + ICON_SIZE - 12, currentY, 12, 12,
                 Component.literal("×"),
@@ -932,15 +961,7 @@ public class MobScalerScreen extends Screen {
                 },
                 DELETE_BUTTON_COLOR,
                 0xFFFF5555
-            ) {
-                @Override
-                public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-                    poseStack.pushPose();
-                    poseStack.translate(0, 0, 500.0F); // Увеличиваем Z-координату значительно выше, чем у сущности (200 -> 500)
-                    super.render(poseStack, mouseX, mouseY, partialTick);
-                    poseStack.popPose();
-                }
-            };
+            );
             
             // Сначала добавляем кнопку моба, затем кнопку удаления
             this.addRenderableWidget(deleteButton); // Сначала добавляем кнопку удаления
@@ -980,12 +1001,14 @@ public class MobScalerScreen extends Screen {
         private String displayName;
         
         public EntityIconButton(int x, int y, int width, int height, Component title, OnPress pressedAction, String entityId) {
-            super(x, y, width, height, title, pressedAction);
+            super(net.minecraft.client.gui.components.Button.builder(title, pressedAction)
+                .pos(x, y)
+                .size(width, height));
             this.entityId = entityId;
             try {
                 // Получаем тип сущности из регистра
-                this.entityType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
-                    new net.minecraft.resources.ResourceLocation(entityId)
+                this.entityType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(
+                    net.minecraft.resources.ResourceLocation.parse(entityId)
                 );
                 if (entityType != null) {
                     this.displayName = entityType.getDescription().getString();
@@ -999,9 +1022,9 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             // Рисуем фон кнопки
-            fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, 
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 
                  this.isHovered ? 0x80FFFFFF : 0x80000000);
             
             // Рисуем иконку сущности
@@ -1016,11 +1039,11 @@ public class MobScalerScreen extends Screen {
                         float maxDimension = Math.max(entityWidth, entityHeight);
                         float scale = (this.height * 0.8f) / maxDimension;
                         
-                        poseStack.pushPose();
+                        guiGraphics.pose().pushPose();
                         
                         // Центр кнопки
-                        float centerX = this.x + this.width/2;
-                        float centerY = this.y + this.height/2;
+                        float centerX = this.getX() + this.getWidth()/2;
+                        float centerY = this.getY() + this.getHeight()/2;
                         
                         // Вычисляем углы поворота на основе позиции курсора
                         float deltaX = mouseX - centerX;
@@ -1056,23 +1079,23 @@ public class MobScalerScreen extends Screen {
                         pitch = Math.max(-maxPitchDelta, Math.min(maxPitchDelta, pitch));
                         
                         // Применяем трансформации
-                        poseStack.translate(centerX, centerY, 200);
-                        poseStack.scale(scale, scale, scale);
+                        guiGraphics.pose().translate(centerX, centerY, 200);
+                        guiGraphics.pose().scale(scale, scale, scale);
                         // Поворачиваем сущность на 180 градусов вокруг оси X чтобы исправить перевернутость
-                        poseStack.mulPose(com.mojang.math.Vector3f.XP.rotationDegrees(180.0F));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateX((float) Math.toRadians(180.0F)));
                         // Применяем поворот по горизонтали (yaw)
-                        poseStack.mulPose(com.mojang.math.Vector3f.YP.rotationDegrees(180.0F + yaw));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateY((float) Math.toRadians(180.0F + yaw)));
                         // Применяем наклон по вертикали (pitch)
-                        poseStack.mulPose(com.mojang.math.Vector3f.XP.rotationDegrees(pitch));
+                        guiGraphics.pose().mulPose(new org.joml.Quaternionf().rotateX((float) Math.toRadians(pitch)));
                         
                         // Отрисовываем сущность
                         Minecraft.getInstance().getEntityRenderDispatcher().render(
-                            entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTick, poseStack,
+                            entity, 0.0D, 0.0D, 0.0D, 0.0F, partialTick, guiGraphics.pose(),
                             Minecraft.getInstance().renderBuffers().bufferSource(),
                             15728880
                         );
                         
-                        poseStack.popPose();
+                        guiGraphics.pose().popPose();
                         
                         // Очищаем буфер рендера
                         Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
@@ -1084,11 +1107,11 @@ public class MobScalerScreen extends Screen {
             
             // Если курсор наведен, показываем всплывающую подсказку
             if (this.isHovered) {
-                renderTooltip(poseStack, mouseX, mouseY);
+                renderTooltip(guiGraphics, mouseX, mouseY);
             }
         }
         
-        private void renderTooltip(PoseStack poseStack, int mouseX, int mouseY) {
+        private void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.literal(getTranslatedText("gui.mobscaler.tooltip.id").getString() + entityId));
             tooltip.add(Component.literal(getTranslatedText("gui.mobscaler.tooltip.name").getString() + displayName));
@@ -1097,24 +1120,23 @@ public class MobScalerScreen extends Screen {
             int tooltipY = mouseY - 40; // Увеличиваем отступ вверх
             
             // Сохраняем текущее состояние матрицы и настройки рендера
-            poseStack.pushPose();
+            guiGraphics.pose().pushPose();
             RenderSystem.disableDepthTest();
             
             // Устанавливаем Z-координату для отрисовки поверх всех элементов
-            poseStack.translate(0, 0, 400.0F);
+            guiGraphics.pose().translate(0, 0, 400.0F);
             
             // Отрисовываем подсказку
-            Minecraft.getInstance().screen.renderComponentTooltip(
-                poseStack,
+            guiGraphics.renderComponentTooltip(
+                Minecraft.getInstance().font,
                 tooltip,
                 mouseX,
-                Math.max(0, tooltipY),
-                Minecraft.getInstance().font
+                Math.max(0, tooltipY)
             );
             
             // Восстанавливаем состояние
             RenderSystem.enableDepthTest();
-            poseStack.popPose();
+            guiGraphics.pose().popPose();
         }
     }
 
@@ -1204,6 +1226,40 @@ public class MobScalerScreen extends Screen {
         addDifficultyField(rightColumnX, startY + spacing, getTranslatedText("gui.mobscaler.difficulty.damage.easy").getString(), "difficulty.damage.easy");
         addDifficultyField(rightColumnX, startY + spacing * 2, getTranslatedText("gui.mobscaler.difficulty.damage.normal").getString(), "difficulty.damage.normal");
         addDifficultyField(rightColumnX, startY + spacing * 3, getTranslatedText("gui.mobscaler.difficulty.damage.hard").getString(), "difficulty.damage.hard");
+
+        // GUI Scale
+        startY += spacing * 5;
+        addLabel(getTranslatedText("gui.mobscaler.gui_scale").getString(), rightColumnX, startY);
+        addLabel(getTranslatedText("gui.mobscaler.gui_scale_note").getString(), rightColumnX, startY + spacing);
+
+        int currentGuiScale = MobScalerConfig.getGuiScaleOnOpen();
+        Button guiScaleMinus = new StyledButton(rightColumnX + 150, startY, 30, 20,
+                Component.literal("-"), button -> {
+            int current = Minecraft.getInstance().options.guiScale().get();
+            int newValue = Math.max(1, current - 1);
+            Minecraft.getInstance().options.guiScale().set(newValue);
+            Minecraft.getInstance().options.save();
+            // Сохраняем в наш конфиг
+            MobScalerConfig.GUI_SCALE_ON_OPEN.set(newValue);
+            MobScalerConfig.save();
+        }, BUTTON_COLOR, BUTTON_HOVER_COLOR);
+        this.addRenderableWidget(guiScaleMinus);
+        this.contentButtons.add(guiScaleMinus);
+
+        addLabel(String.valueOf(currentGuiScale), rightColumnX + 190, startY + 5);
+
+        Button guiScalePlus = new StyledButton(rightColumnX + 210, startY, 30, 20,
+                Component.literal("+"), button -> {
+            int current = Minecraft.getInstance().options.guiScale().get();
+            int newValue = Math.min(4, current + 1);
+            Minecraft.getInstance().options.guiScale().set(newValue);
+            Minecraft.getInstance().options.save();
+            // Сохраняем в наш конфиг
+            MobScalerConfig.GUI_SCALE_ON_OPEN.set(newValue);
+            MobScalerConfig.save();
+        }, BUTTON_COLOR, BUTTON_HOVER_COLOR);
+        this.addRenderableWidget(guiScalePlus);
+        this.contentButtons.add(guiScalePlus);
     }
 
     private void addDifficultyField(int x, int y, String label, String configPath) {
@@ -1270,10 +1326,12 @@ public class MobScalerScreen extends Screen {
     private void initModAttributesContent() {
         // Очищаем предыдущие виджеты
         this.clearWidgets();
-        this.labels.clear(); // Очищаем все метки
-        this.textFields.clear(); // Очищаем текстовые поля
-        this.fieldMappings.clear(); // Очищаем маппинги полей
-        this.checkBoxes.clear(); // Очищаем чекбоксы
+        this.labels.clear();
+        this.textFields.clear();
+        this.fieldMappings.clear();
+        this.checkBoxes.clear();
+        this.contentButtons.clear();
+        this.tabButtons.clear();
         // Добавляем кнопки вкладок
         addTabButtons();
         
@@ -1326,7 +1384,7 @@ public class MobScalerScreen extends Screen {
         
         // Кнопка ночных настроек
         Button nightButton = new StyledButton(startX + buttonWidth + buttonSpacing, buttonY, buttonWidth, buttonHeight, 
-                getTranslatedText("gui.mobscaler.settings.night"), button -> {
+                getTranslatedText("gui.mobscaler.settings.night"), button -> {  
             if (enableNightScaling.get()) {
                 currentSettingsType = SettingsType.NIGHT;
                 initModAttributesContent();
@@ -1533,22 +1591,39 @@ public class MobScalerScreen extends Screen {
             addModField(fieldsX, fieldsY + FIELD_SPACING * 8, getTranslatedText("gui.mobscaler.follow_range").getString(), fieldPrefix + "FollowRange", config);
             addModField(fieldsX, fieldsY + FIELD_SPACING * 9, getTranslatedText("gui.mobscaler.flying_speed").getString(), fieldPrefix + "FlyingSpeed", config);
             addModField(fieldsX, fieldsY + FIELD_SPACING * 10, getTranslatedText("gui.mobscaler.armor_toughness").getString(), fieldPrefix + "ArmorToughness", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 11, getTranslatedText("gui.mobscaler.luck").getString(), fieldPrefix + "Luck", config);
+
         } else {
             // Дополнительные атрибуты
-            addModField(fieldsX, fieldsY + FIELD_SPACING, getTranslatedText("gui.mobscaler.luck").getString(), fieldPrefix + "Luck", config);
-            addModField(fieldsX, fieldsY + FIELD_SPACING * 2, getTranslatedText("gui.mobscaler.swim_speed").getString(), fieldPrefix + "SwimSpeed", config);
-            addModField(fieldsX, fieldsY + FIELD_SPACING * 3, getTranslatedText("gui.mobscaler.reach_distance").getString(), fieldPrefix + "ReachDistance", config);
+
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 1, getTranslatedText("gui.mobscaler.swim_speed").getString(), fieldPrefix + "SwimSpeed", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 2, getTranslatedText("gui.mobscaler.reach_distance").getString(), fieldPrefix + "ReachDistance", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 3, getTranslatedText("gui.mobscaler.entity_reach_distance").getString(), fieldPrefix + "EntityReach", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 4, getTranslatedText("gui.mobscaler.burning_time").getString(), fieldPrefix + "BurningTime", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 5, getTranslatedText("gui.mobscaler.explosion_knockback_resistance").getString(), fieldPrefix + "ExplosionKnockbackResistance", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 6, getTranslatedText("gui.mobscaler.fall_damage_multiplier").getString(), fieldPrefix + "FallDamageMultiplier", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 7, getTranslatedText("gui.mobscaler.oxygen_bonus").getString(), fieldPrefix + "OxygenBonus", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 8, getTranslatedText("gui.mobscaler.safe_fall_distance").getString(), fieldPrefix + "SafeFallDistance", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 9, getTranslatedText("gui.mobscaler.water_movement_efficiency").getString(), fieldPrefix + "WaterMovementEfficiency", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 10, getTranslatedText("gui.mobscaler.jump_strength").getString(), fieldPrefix + "JumpStrength", config);
+            addModField(fieldsX, fieldsY + FIELD_SPACING * 11, getTranslatedText("gui.mobscaler.movement_efficiency").getString(), fieldPrefix + "MovementEfficiency", config);
+
+
         }
     }
+
+    
     
     private void initDimensionSettingsContent() {
         // Очищаем предыдущие виджеты
         this.clearWidgets();
-        this.labels.clear(); // Очищаем все метки
-        this.textFields.clear(); // Очищаем текстовые поля
-        this.fieldMappings.clear(); // Очищаем маппинги полей
-        this.labels.clear(); // Очищаем все метки
-        
+        this.labels.clear();
+        this.textFields.clear();
+        this.fieldMappings.clear();
+        this.checkBoxes.clear();
+        this.contentButtons.clear();
+        this.tabButtons.clear();
+
         // Добавляем кнопки вкладок
         addTabButtons();
         
@@ -1855,6 +1930,14 @@ public class MobScalerScreen extends Screen {
             addDimensionField(fieldsX, fieldsY + FIELD_SPACING, getTranslatedText("gui.mobscaler.luck").getString(), fieldPrefix + "Luck", config);
             addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 2, getTranslatedText("gui.mobscaler.swim_speed").getString(), fieldPrefix + "SwimSpeed", config);
             addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 3, getTranslatedText("gui.mobscaler.reach_distance").getString(), fieldPrefix + "ReachDistance", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 4, getTranslatedText("gui.mobscaler.entity_reach_distance").getString(), fieldPrefix + "EntityReach", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 5, getTranslatedText("gui.mobscaler.burning_time").getString(), fieldPrefix + "BurningTime", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 6, getTranslatedText("gui.mobscaler.explosion_knockback_resistance").getString(), fieldPrefix + "ExplosionKnockbackResistance", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 7, getTranslatedText("gui.mobscaler.fall_damage_multiplier").getString(), fieldPrefix + "FallDamageMultiplier", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 8, getTranslatedText("gui.mobscaler.oxygen_bonus").getString(), fieldPrefix + "OxygenBonus", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 9, getTranslatedText("gui.mobscaler.safe_fall_distance").getString(), fieldPrefix + "SafeFallDistance", config);
+            addDimensionField(fieldsX, fieldsY + FIELD_SPACING * 10, getTranslatedText("gui.mobscaler.water_movement_efficiency").getString(), fieldPrefix + "WaterMovementEfficiency", config);
+
         }
     }
     
@@ -1910,7 +1993,7 @@ public class MobScalerScreen extends Screen {
             case DIMENSIONS:
                 saveDimensionChanges();
                 break;
-            case DIFFICULTY:
+            case SETTINGS:
                 saveDifficultySettings();
                 break;
             case PLAYER:
@@ -2428,59 +2511,57 @@ public class MobScalerScreen extends Screen {
     }
     
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-        // Рисуем полупрозрачный фон
-        this.renderBackground(poseStack);
-        fill(poseStack, 0, 0, this.width, this.height, BACKGROUND_COLOR);
-        
-        // Рисуем основной заголовок
-        drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.title").getString(), this.width / 2, 15, TEXT_COLOR);
-        
-        // Отрисовываем панель прокрутки, если она существует, мы на вкладке модов и мод не выбран
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Рисуем панель прокрутки модов ПЕРЕД основным содержимым (под окном настроек)
         if (currentTab == TabType.MODS && modListPanel != null && selectedMod == null) {
-            modListPanel.render(poseStack, mouseX, mouseY, partialTick);
+            modListPanel.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        
-        // Отрисовываем все виджеты
-        super.render(poseStack, mouseX, mouseY, partialTick);
-        
+
+        // Рисуем основной заголовок
+        guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.title").getString(), this.width / 2, 15, TEXT_COLOR);
+
+        // Отрисовываем все метки
+        for (Label label : labels) {
+            label.render(guiGraphics, this.font);
+        }
+
+        // Отрисовываем все виджеты (кнопки, поля и т.д.)
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
         // Отрисовываем заголовок только для активной вкладки
         if (currentTab == TabType.MODS) {
             if (selectedMod != null) {
                 // Заголовок с названием мода отрисовывается через addLabel
-                fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
+                guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
             }
         } else if (currentTab == TabType.DIMENSIONS) {
             if (selectedDimension != null) {
                 // Заголовок с названием измерения отрисовывается через addLabel
-                fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
+                guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
             }
-        } else if (currentTab == TabType.DIFFICULTY) {
-            // Заголовок для вкладки сложности
-            fill(poseStack, 10, 35, this.width - 10, 55, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.difficulty.settings").getString(), this.width / 2, 40, TEXT_COLOR);
+        } else if (currentTab == TabType.SETTINGS) {
+            // Заголовок для вкладки настроек
+            guiGraphics.fill(10, 35, this.width - 10, 55, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.difficulty.settings").getString(), this.width / 2, 40, TEXT_COLOR);
         }
-        
-        // Отрисовываем все метки
-        for (Label label : labels) {
-            label.render(poseStack, this.font);
-        }
-        
+
         // Отрисовываем все элементы интерфейса
         for (EditBox field : textFields) {
-            field.render(poseStack, mouseX, mouseY, partialTick);
+            field.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        
+
         for (CheckBox checkbox : checkBoxes) {
-            checkbox.render(poseStack, mouseX, mouseY, partialTick);
+            checkbox.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        
+
         for (Button button : contentButtons) {
-            button.render(poseStack, mouseX, mouseY, partialTick);
+            button.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        
+
         for (Button button : tabButtons) {
-            button.render(poseStack, mouseX, mouseY, partialTick);
+            button.render(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -2515,13 +2596,13 @@ public class MobScalerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
         if (currentTab == TabType.MODS && modListPanel != null && selectedMod == null) {
-            if (modListPanel.mouseScrolled(mouseX, mouseY, delta)) {
+            if (modListPanel.mouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY)) {
                 return true;
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
     }
 
     private class DeleteConfirmationDialog extends Screen {
@@ -2534,6 +2615,11 @@ public class MobScalerScreen extends Screen {
             super(getTranslatedText("gui.mobscaler.confirm.delete"));
             this.modId = modId;
             this.onConfirm = onConfirm;
+        }
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
         }
 
         @Override
@@ -2576,22 +2662,23 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.mod").getString() + " " + modId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.mod").getString() + " " + modId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -2612,7 +2699,12 @@ public class MobScalerScreen extends Screen {
         public AddModDialog() {
             super(Component.literal(getTranslatedText("gui.mobscaler.add_mod").getString()));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -2675,7 +2767,7 @@ public class MobScalerScreen extends Screen {
             scrollOffset = 0;
             
             // Получаем список установленных модов из Minecraft
-            net.minecraftforge.fml.ModList modList = net.minecraftforge.fml.ModList.get();
+            net.neoforged.fml.ModList modList = net.neoforged.fml.ModList.get();
             
             // Фильтруем моды по введенному тексту
             String lowercaseInput = input.toLowerCase();
@@ -2722,22 +2814,23 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_mod").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_mod").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mod_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mod_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -2745,7 +2838,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -2753,15 +2846,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -2791,11 +2884,11 @@ public class MobScalerScreen extends Screen {
             
             return false;
         }
-        
+
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty()) {
-                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)delta, 
+                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)scrollDeltaY,
                     Math.max(0, suggestions.size() - MAX_VISIBLE_SUGGESTIONS)));
                 return true;
             }
@@ -2815,7 +2908,12 @@ public class MobScalerScreen extends Screen {
         public AddDimensionDialog() {
             super(Component.literal(getTranslatedText("gui.mobscaler.add_dimension").getString()));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -2923,22 +3021,23 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_dimension").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_dimension").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_dimension_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_dimension_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -2946,7 +3045,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -2954,15 +3053,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -2990,11 +3089,11 @@ public class MobScalerScreen extends Screen {
             
             return false;
         }
-        
+
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty()) {
-                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)delta, 
+                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)scrollDeltaY,
                     Math.max(0, suggestions.size() - MAX_VISIBLE_SUGGESTIONS)));
                 return true;
             }
@@ -3012,6 +3111,11 @@ public class MobScalerScreen extends Screen {
             super(getTranslatedText("gui.mobscaler.confirm.delete.dimension"));
             this.dimensionId = dimensionId;
             this.onConfirm = onConfirm;
+        }
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
         }
 
         @Override
@@ -3054,22 +3158,23 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.dimension").getString() + " " + dimensionId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.dimension").getString() + " " + dimensionId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -3084,7 +3189,9 @@ public class MobScalerScreen extends Screen {
         this.fieldMappings.clear();
         this.textFields.clear();
         this.checkBoxes.clear();
-        this.labels.clear(); // Очищаем все метки
+        this.labels.clear();
+        this.contentButtons.clear();
+        this.tabButtons.clear();
 
         // Добавляем кнопки вкладок
         addTabButtons();
@@ -3186,7 +3293,15 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getArmorToughnessAddition(), oldAttrs.getArmorToughnessMultiplier(),
                             oldAttrs.getLuckAddition(), oldAttrs.getLuckMultiplier(),
                             oldAttrs.getSwimSpeedAddition(), oldAttrs.getSwimSpeedMultiplier(),
-                            oldAttrs.getReachDistanceAddition(), oldAttrs.getReachDistanceMultiplier(),
+                            oldAttrs.getBlockReachAddition(), oldAttrs.getBlockReachMultiplier(),
+                            oldAttrs.getEntityReachAddition(), oldAttrs.getEntityReachMultiplier(),
+                            oldAttrs.getBurningTimeAddition(), oldAttrs.getBurningTimeMultiplier(),
+                            oldAttrs.getExplosionKnockbackResistanceAddition(), oldAttrs.getExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(),
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
+                            
                             // Ночные атрибуты
                             oldAttrs.getNightHealthAddition(), oldAttrs.getNightHealthMultiplier(),
                             oldAttrs.getNightArmorAddition(), oldAttrs.getNightArmorMultiplier(),
@@ -3200,7 +3315,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getNightArmorToughnessAddition(), oldAttrs.getNightArmorToughnessMultiplier(),
                             oldAttrs.getNightLuckAddition(), oldAttrs.getNightLuckMultiplier(),
                             oldAttrs.getNightSwimSpeedAddition(), oldAttrs.getNightSwimSpeedMultiplier(),
-                            oldAttrs.getNightReachDistanceAddition(), oldAttrs.getNightReachDistanceMultiplier(),
+                            oldAttrs.getNightBlockReachAddition(), oldAttrs.getNightBlockReachMultiplier(),
+                            oldAttrs.getNightEntityReachAddition(), oldAttrs.getNightEntityReachMultiplier(),
+                            oldAttrs.getNightBurningTimeAddition(), oldAttrs.getNightBurningTimeMultiplier(),
+                            oldAttrs.getNightExplosionKnockbackResistanceAddition(), oldAttrs.getNightExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getNightFallDamageMultiplier(),
+                            oldAttrs.getNightOxygenBonusAddition(), oldAttrs.getNightOxygenBonusMultiplier(),
+                            oldAttrs.getNightSafeFallDistanceAddition(), oldAttrs.getNightSafeFallDistanceMultiplier(),
+                            oldAttrs.getNightWaterMovementEfficiencyAddition(), oldAttrs.getNightWaterMovementEfficiencyMultiplier(),
                             // Пещерные атрибуты
                             oldAttrs.getCaveHealthAddition(), oldAttrs.getCaveHealthMultiplier(),
                             oldAttrs.getCaveArmorAddition(), oldAttrs.getCaveArmorMultiplier(),
@@ -3214,7 +3336,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getCaveArmorToughnessAddition(), oldAttrs.getCaveArmorToughnessMultiplier(),
                             oldAttrs.getCaveLuckAddition(), oldAttrs.getCaveLuckMultiplier(),
                             oldAttrs.getCaveSwimSpeedAddition(), oldAttrs.getCaveSwimSpeedMultiplier(),
-                            oldAttrs.getCaveReachDistanceAddition(), oldAttrs.getCaveReachDistanceMultiplier(),
+                            oldAttrs.getCaveBlockReachAddition(), oldAttrs.getCaveBlockReachMultiplier(),
+                            oldAttrs.getCaveEntityReachAddition(), oldAttrs.getCaveEntityReachMultiplier(),
+                            oldAttrs.getCaveBurningTimeAddition(), oldAttrs.getCaveBurningTimeMultiplier(),
+                            oldAttrs.getCaveExplosionKnockbackResistanceAddition(), oldAttrs.getCaveExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getCaveFallDamageMultiplier(),
+                            oldAttrs.getCaveOxygenBonusAddition(), oldAttrs.getCaveOxygenBonusMultiplier(),
+                            oldAttrs.getCaveSafeFallDistanceAddition(), oldAttrs.getCaveSafeFallDistanceMultiplier(),
+                            oldAttrs.getCaveWaterMovementEfficiencyAddition(), oldAttrs.getCaveWaterMovementEfficiencyMultiplier(),
                             oldAttrs.isBlacklisted()
                         );
                         
@@ -3270,7 +3399,15 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getArmorToughnessAddition(), oldAttrs.getArmorToughnessMultiplier(),
                             oldAttrs.getLuckAddition(), oldAttrs.getLuckMultiplier(),
                             oldAttrs.getSwimSpeedAddition(), oldAttrs.getSwimSpeedMultiplier(),
-                            oldAttrs.getReachDistanceAddition(), oldAttrs.getReachDistanceMultiplier(),
+                            oldAttrs.getBlockReachAddition(), oldAttrs.getBlockReachMultiplier(),
+                            oldAttrs.getEntityReachAddition(), oldAttrs.getEntityReachMultiplier(),
+                            oldAttrs.getBurningTimeAddition(), oldAttrs.getBurningTimeMultiplier(),
+                            oldAttrs.getExplosionKnockbackResistanceAddition(), oldAttrs.getExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(),
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
+
                             // Ночные атрибуты
                             oldAttrs.getNightHealthAddition(), oldAttrs.getNightHealthMultiplier(),
                             oldAttrs.getNightArmorAddition(), oldAttrs.getNightArmorMultiplier(),
@@ -3284,7 +3421,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getNightArmorToughnessAddition(), oldAttrs.getNightArmorToughnessMultiplier(),
                             oldAttrs.getNightLuckAddition(), oldAttrs.getNightLuckMultiplier(),
                             oldAttrs.getNightSwimSpeedAddition(), oldAttrs.getNightSwimSpeedMultiplier(),
-                            oldAttrs.getNightReachDistanceAddition(), oldAttrs.getNightReachDistanceMultiplier(),
+                            oldAttrs.getNightBlockReachAddition(), oldAttrs.getNightBlockReachMultiplier(),
+                            oldAttrs.getNightEntityReachAddition(), oldAttrs.getNightEntityReachMultiplier(),
+                            oldAttrs.getNightBurningTimeAddition(), oldAttrs.getNightBurningTimeMultiplier(),
+                            oldAttrs.getNightExplosionKnockbackResistanceAddition(), oldAttrs.getNightExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getNightFallDamageMultiplier(),
+                            oldAttrs.getNightOxygenBonusAddition(), oldAttrs.getNightOxygenBonusMultiplier(),
+                            oldAttrs.getNightSafeFallDistanceAddition(), oldAttrs.getNightSafeFallDistanceMultiplier(),
+                            oldAttrs.getNightWaterMovementEfficiencyAddition(), oldAttrs.getNightWaterMovementEfficiencyMultiplier(),
                             // Пещерные атрибуты
                             oldAttrs.getCaveHealthAddition(), oldAttrs.getCaveHealthMultiplier(),
                             oldAttrs.getCaveArmorAddition(), oldAttrs.getCaveArmorMultiplier(),
@@ -3298,7 +3442,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getCaveArmorToughnessAddition(), oldAttrs.getCaveArmorToughnessMultiplier(),
                             oldAttrs.getCaveLuckAddition(), oldAttrs.getCaveLuckMultiplier(),
                             oldAttrs.getCaveSwimSpeedAddition(), oldAttrs.getCaveSwimSpeedMultiplier(),
-                            oldAttrs.getCaveReachDistanceAddition(), oldAttrs.getCaveReachDistanceMultiplier(),
+                            oldAttrs.getCaveBlockReachAddition(), oldAttrs.getCaveBlockReachMultiplier(),
+                            oldAttrs.getCaveEntityReachAddition(), oldAttrs.getCaveEntityReachMultiplier(),
+                            oldAttrs.getCaveBurningTimeAddition(), oldAttrs.getCaveBurningTimeMultiplier(),
+                            oldAttrs.getCaveExplosionKnockbackResistanceAddition(), oldAttrs.getCaveExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getCaveFallDamageMultiplier(),
+                            oldAttrs.getCaveOxygenBonusAddition(), oldAttrs.getCaveOxygenBonusMultiplier(),
+                            oldAttrs.getCaveSafeFallDistanceAddition(), oldAttrs.getCaveSafeFallDistanceMultiplier(),
+                            oldAttrs.getCaveWaterMovementEfficiencyAddition(), oldAttrs.getCaveWaterMovementEfficiencyMultiplier(),
                             oldAttrs.isBlacklisted()
                         );
                         
@@ -3353,11 +3504,22 @@ public class MobScalerScreen extends Screen {
             attributesToDisplay.add(new String[]{"FollowRange", getTranslatedText("gui.mobscaler.follow_range").getString()});
             attributesToDisplay.add(new String[]{"FlyingSpeed", getTranslatedText("gui.mobscaler.flying_speed").getString()});
             attributesToDisplay.add(new String[]{"ArmorToughness", getTranslatedText("gui.mobscaler.armor_toughness").getString()});
+            attributesToDisplay.add(new String[]{"Luck", getTranslatedText("gui.mobscaler.luck").getString()});
+
+
         } else {
             // Дополнительные атрибуты
-            attributesToDisplay.add(new String[]{"Luck", getTranslatedText("gui.mobscaler.luck").getString()});
             attributesToDisplay.add(new String[]{"SwimSpeed", getTranslatedText("gui.mobscaler.swim_speed").getString()});
             attributesToDisplay.add(new String[]{"ReachDistance", getTranslatedText("gui.mobscaler.reach_distance").getString()});
+            attributesToDisplay.add(new String[]{"EntityReach", getTranslatedText("gui.mobscaler.entity_reach_distance").getString()});
+            attributesToDisplay.add(new String[]{"BurningTime", getTranslatedText("gui.mobscaler.burning_time").getString()});
+            attributesToDisplay.add(new String[]{"ExplosionKnockbackResistance", getTranslatedText("gui.mobscaler.explosion_knockback_resistance").getString()});
+            attributesToDisplay.add(new String[]{"FallDamageMultiplier", getTranslatedText("gui.mobscaler.fall_damage_multiplier").getString()});
+            attributesToDisplay.add(new String[]{"OxygenBonus", getTranslatedText("gui.mobscaler.oxygen_bonus").getString()});
+            attributesToDisplay.add(new String[]{"SafeFallDistance", getTranslatedText("gui.mobscaler.safe_fall_distance").getString()});
+            attributesToDisplay.add(new String[]{"WaterMovementEfficiency", getTranslatedText("gui.mobscaler.water_movement_efficiency").getString()});
+            attributesToDisplay.add(new String[]{"JumpStrength", getTranslatedText("gui.mobscaler.jump_strength").getString()});
+            attributesToDisplay.add(new String[]{"MovementEfficiency", getTranslatedText("gui.mobscaler.movement_efficiency").getString()});
         }
 
         // Добавляем поля для атрибутов
@@ -3467,37 +3629,40 @@ public class MobScalerScreen extends Screen {
         
         // Здоровье
         addLabel(getTranslatedText("gui.mobscaler.health").getString() + ":", formulaLabelX, formulaY + 25);
-        addAttributeFormula(formulaValueX, formulaY + 25, selectedEntity, "Health", healthAddition, healthMultiplier);
-        
+        double healthDifficultyMultiplier = getHealthDifficultyMultiplier();
+        addAttributeFormula(formulaValueX, formulaY + 25, selectedEntity, "Health", healthAddition, healthMultiplier, healthDifficultyMultiplier);
+
         // Броня
         addLabel(getTranslatedText("gui.mobscaler.armor").getString() + ":", formulaLabelX, formulaY + 50);
         addAttributeFormula(formulaValueX, formulaY + 50, selectedEntity, "Armor", armorAddition, armorMultiplier);
-        
+
         // Урон
         addLabel(getTranslatedText("gui.mobscaler.damage").getString() + ":", formulaLabelX, formulaY + 75);
-        addAttributeFormula(formulaValueX, formulaY + 75, selectedEntity, "Damage", damageAddition, damageMultiplier);
+        double damageDifficultyMultiplier = getDamageDifficultyMultiplier();
+        addAttributeFormula(formulaValueX, formulaY + 75, selectedEntity, "Damage", damageAddition, damageMultiplier, damageDifficultyMultiplier);
         
         // Урон с мечом (атака 8)
         addLabel(getTranslatedText("gui.mobscaler.sword_damage").getString() + ":", formulaLabelX, formulaY + 100);
         try {
-            double baseValue = getBaseAttributeValue(selectedEntity, "Damage");
-            double finalDamage = (baseValue + damageAddition) * damageMultiplier;
-            double swordDamage = 8.0; // Значение атаки меча
+            //double baseValue = getBaseAttributeValue(selectedEntity, "Damage");
+            //double damageDiffMult = getDamageDifficultyMultiplier();
+            //double finalDamage = (baseValue + damageAddition) * damageMultiplier * damageDiffMult;
             
+            double swordDamage = 8.0; // Значение атаки меча
+
             double armorValue = getBaseAttributeValue(selectedEntity, "Armor");
             double finalArmor = (armorValue + armorAddition) * armorMultiplier;
-            
+
             double armorToughnessValue = getBaseAttributeValue(selectedEntity, "ArmorToughness");
             double finalArmorToughness = (armorToughnessValue + armorToughnessAddition) * armorToughnessMultiplier;
-            
+
             // Расчет урона по формуле Minecraft (упрощенно)
             // Урон = Урон меча * (1 - min(20, max(Броня/5, Броня - Урон/(2 + Жесткость/4)))/25)
             double damageReduction = Math.min(20, Math.max(finalArmor/5, finalArmor - swordDamage/(2 + finalArmorToughness/4)))/25;
             double effectiveDamage = swordDamage * (1 - damageReduction);
-            
-            String formula = String.format("%s: %.1f | %s: %.1f | %s: %.1f | %s: %.1f", 
-            getTranslatedText("gui.mobscaler.mob").getString(),
-            finalDamage, 
+
+            String formula = String.format("%s: %.1f | %s: %.1f | %s: %.1f",
+
             getTranslatedText("gui.mobscaler.sword").getString(),
             swordDamage,
             getTranslatedText("gui.mobscaler.armor").getString(),
@@ -3612,7 +3777,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getArmorToughnessAddition(), oldAttrs.getArmorToughnessMultiplier(),
                             oldAttrs.getLuckAddition(), oldAttrs.getLuckMultiplier(),
                             oldAttrs.getSwimSpeedAddition(), oldAttrs.getSwimSpeedMultiplier(),
-                            oldAttrs.getReachDistanceAddition(), oldAttrs.getReachDistanceMultiplier(),
+                            oldAttrs.getBlockReachAddition(), oldAttrs.getBlockReachMultiplier(),
+                            oldAttrs.getEntityReachAddition(), oldAttrs.getEntityReachMultiplier(),
+                            oldAttrs.getBurningTimeAddition(), oldAttrs.getBurningTimeMultiplier(),
+                            oldAttrs.getExplosionKnockbackResistanceAddition(), oldAttrs.getExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(),
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
                             // Ночные атрибуты
                             oldAttrs.getNightHealthAddition(), oldAttrs.getNightHealthMultiplier(),
                             oldAttrs.getNightArmorAddition(), oldAttrs.getNightArmorMultiplier(),
@@ -3626,7 +3798,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getNightArmorToughnessAddition(), oldAttrs.getNightArmorToughnessMultiplier(),
                             oldAttrs.getNightLuckAddition(), oldAttrs.getNightLuckMultiplier(),
                             oldAttrs.getNightSwimSpeedAddition(), oldAttrs.getNightSwimSpeedMultiplier(),
-                            oldAttrs.getNightReachDistanceAddition(), oldAttrs.getNightReachDistanceMultiplier(),
+                            oldAttrs.getNightBlockReachAddition(), oldAttrs.getNightBlockReachMultiplier(),
+                            oldAttrs.getNightEntityReachAddition(), oldAttrs.getNightEntityReachMultiplier(),
+                            oldAttrs.getNightBurningTimeAddition(), oldAttrs.getNightBurningTimeMultiplier(),
+                            oldAttrs.getNightExplosionKnockbackResistanceAddition(), oldAttrs.getNightExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getNightFallDamageMultiplier(),
+                            oldAttrs.getNightOxygenBonusAddition(), oldAttrs.getNightOxygenBonusMultiplier(),
+                            oldAttrs.getNightSafeFallDistanceAddition(), oldAttrs.getNightSafeFallDistanceMultiplier(),
+                            oldAttrs.getNightWaterMovementEfficiencyAddition(), oldAttrs.getNightWaterMovementEfficiencyMultiplier(),
                             // Пещерные атрибуты
                             oldAttrs.getCaveHealthAddition(), oldAttrs.getCaveHealthMultiplier(),
                             oldAttrs.getCaveArmorAddition(), oldAttrs.getCaveArmorMultiplier(),
@@ -3640,7 +3819,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getCaveArmorToughnessAddition(), oldAttrs.getCaveArmorToughnessMultiplier(),
                             oldAttrs.getCaveLuckAddition(), oldAttrs.getCaveLuckMultiplier(),
                             oldAttrs.getCaveSwimSpeedAddition(), oldAttrs.getCaveSwimSpeedMultiplier(),
-                            oldAttrs.getCaveReachDistanceAddition(), oldAttrs.getCaveReachDistanceMultiplier(),
+                            oldAttrs.getCaveBlockReachAddition(), oldAttrs.getCaveBlockReachMultiplier(),
+                            oldAttrs.getCaveEntityReachAddition(), oldAttrs.getCaveEntityReachMultiplier(),
+                            oldAttrs.getCaveBurningTimeAddition(), oldAttrs.getCaveBurningTimeMultiplier(),
+                            oldAttrs.getCaveExplosionKnockbackResistanceAddition(), oldAttrs.getCaveExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getCaveFallDamageMultiplier(),
+                            oldAttrs.getCaveOxygenBonusAddition(), oldAttrs.getCaveOxygenBonusMultiplier(),
+                            oldAttrs.getCaveSafeFallDistanceAddition(), oldAttrs.getCaveSafeFallDistanceMultiplier(),
+                            oldAttrs.getCaveWaterMovementEfficiencyAddition(), oldAttrs.getCaveWaterMovementEfficiencyMultiplier(),
                             oldAttrs.isBlacklisted()
                         );
                         
@@ -3715,7 +3901,12 @@ public class MobScalerScreen extends Screen {
         public AddMobDialog() {
             super(Component.literal(getTranslatedText("gui.mobscaler.add_mob").getString()));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -3775,8 +3966,8 @@ public class MobScalerScreen extends Screen {
             scrollOffset = 0;
             
             // Получаем список всех зарегистрированных сущностей
-            net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.forEach(entityType -> {
-                String entityId = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entityType).toString();
+            net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.forEach(entityType -> {
+                String entityId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString();
                 if (entityId.toLowerCase().contains(input.toLowerCase())) {
                     suggestions.add(entityId);
                 }
@@ -3837,22 +4028,23 @@ public class MobScalerScreen extends Screen {
         }
         
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Основной фон
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Заголовок
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.add_mob").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 30, HEADER_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.add_mob").getString(), this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Подсказка
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mob_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mob_id").getString(), dialogX + 15, dialogY + 40, TEXT_COLOR);
             
             // Рисуем подсказки
             if (!suggestions.isEmpty()) {
@@ -3860,7 +4052,7 @@ public class MobScalerScreen extends Screen {
                 int maxY = dialogY + dialogHeight - 60;
                 
                 // Фон для списка подсказок
-                fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
+                guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, maxY, 0x80000000);
                 
                 for (int i = scrollOffset; i < Math.min(scrollOffset + MAX_VISIBLE_SUGGESTIONS, suggestions.size()); i++) {
                     String suggestion = suggestions.get(i);
@@ -3868,15 +4060,15 @@ public class MobScalerScreen extends Screen {
                     
                     // Подсветка выбранной подсказки
                     if (isSelected) {
-                        fill(poseStack, dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
+                        guiGraphics.fill(dialogX + 20, suggestionY, dialogX + dialogWidth - 20, suggestionY + 12, HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
+                    guiGraphics.drawString(this.font, suggestion, dialogX + 25, suggestionY, TEXT_COLOR);
                     suggestionY += 12;
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -3935,11 +4127,11 @@ public class MobScalerScreen extends Screen {
             
             return false;
         }
-        
+
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty()) {
-                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)delta, 
+                scrollOffset = Math.max(0, Math.min(scrollOffset - (int)scrollDeltaY,
                     Math.max(0, suggestions.size() - MAX_VISIBLE_SUGGESTIONS)));
                 return true;
             }
@@ -3957,6 +4149,11 @@ public class MobScalerScreen extends Screen {
             super(Component.literal(getTranslatedText("gui.mobscaler.confirm.delete").getString()));
             this.mobId = mobId;
             this.onConfirm = onConfirm;
+        }
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
         }
 
         @Override
@@ -3999,22 +4196,23 @@ public class MobScalerScreen extends Screen {
         }
 
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000);
+
             // Рисуем фон диалога
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + 20, HEADER_COLOR);
             
             // Рисуем текст
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
-            drawCenteredString(poseStack, this.font, getTranslatedText("gui.mobscaler.confirm.delete.mob").getString() + " " + mobId + "?", 
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete").getString(), this.width / 2, dialogY + 6, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, getTranslatedText("gui.mobscaler.confirm.delete.mob").getString() + " " + mobId + "?", 
                              this.width / 2, dialogY + 40, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -4071,7 +4269,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getArmorToughnessAddition(), oldAttrs.getArmorToughnessMultiplier(),
                             oldAttrs.getLuckAddition(), oldAttrs.getLuckMultiplier(),
                             oldAttrs.getSwimSpeedAddition(), oldAttrs.getSwimSpeedMultiplier(),
-                            oldAttrs.getReachDistanceAddition(), oldAttrs.getReachDistanceMultiplier(),
+                            oldAttrs.getBlockReachAddition(), oldAttrs.getBlockReachMultiplier(),
+                            oldAttrs.getEntityReachAddition(), oldAttrs.getEntityReachMultiplier(),
+                            oldAttrs.getBurningTimeAddition(), oldAttrs.getBurningTimeMultiplier(),
+                            oldAttrs.getExplosionKnockbackResistanceAddition(), oldAttrs.getExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(),
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
                             // Ночные атрибуты
                             oldAttrs.getNightHealthAddition(), oldAttrs.getNightHealthMultiplier(),
                             oldAttrs.getNightArmorAddition(), oldAttrs.getNightArmorMultiplier(),
@@ -4085,7 +4290,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getNightArmorToughnessAddition(), oldAttrs.getNightArmorToughnessMultiplier(),
                             oldAttrs.getNightLuckAddition(), oldAttrs.getNightLuckMultiplier(),
                             oldAttrs.getNightSwimSpeedAddition(), oldAttrs.getNightSwimSpeedMultiplier(),
-                            oldAttrs.getNightReachDistanceAddition(), oldAttrs.getNightReachDistanceMultiplier(),
+                            oldAttrs.getNightBlockReachAddition(), oldAttrs.getNightBlockReachMultiplier(),
+                            oldAttrs.getNightEntityReachAddition(), oldAttrs.getNightEntityReachMultiplier(),
+                            oldAttrs.getNightBurningTimeAddition(), oldAttrs.getNightBurningTimeMultiplier(),
+                            oldAttrs.getNightExplosionKnockbackResistanceAddition(), oldAttrs.getNightExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(),
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
                             // Пещерные атрибуты
                             oldAttrs.getCaveHealthAddition(), oldAttrs.getCaveHealthMultiplier(),
                             oldAttrs.getCaveArmorAddition(), oldAttrs.getCaveArmorMultiplier(),
@@ -4099,7 +4311,14 @@ public class MobScalerScreen extends Screen {
                             oldAttrs.getCaveArmorToughnessAddition(), oldAttrs.getCaveArmorToughnessMultiplier(),
                             oldAttrs.getCaveLuckAddition(), oldAttrs.getCaveLuckMultiplier(),
                             oldAttrs.getCaveSwimSpeedAddition(), oldAttrs.getCaveSwimSpeedMultiplier(),
-                            oldAttrs.getCaveReachDistanceAddition(), oldAttrs.getCaveReachDistanceMultiplier(),
+                            oldAttrs.getCaveBlockReachAddition(), oldAttrs.getCaveBlockReachMultiplier(),
+                            oldAttrs.getCaveEntityReachAddition(), oldAttrs.getCaveEntityReachMultiplier(),
+                            oldAttrs.getCaveBurningTimeAddition(), oldAttrs.getCaveBurningTimeMultiplier(),
+                            oldAttrs.getCaveExplosionKnockbackResistanceAddition(), oldAttrs.getCaveExplosionKnockbackResistanceMultiplier(),
+                            oldAttrs.getFallDamageMultiplier(), 
+                            oldAttrs.getOxygenBonusAddition(), oldAttrs.getOxygenBonusMultiplier(),
+                            oldAttrs.getSafeFallDistanceAddition(), oldAttrs.getSafeFallDistanceMultiplier(),
+                            oldAttrs.getWaterMovementEfficiencyAddition(), oldAttrs.getWaterMovementEfficiencyMultiplier(),
                         isBlacklisted
                         );
                         
@@ -4312,7 +4531,12 @@ public class MobScalerScreen extends Screen {
             this.dimensionId = dimensionId;
             this.onConfirm = onConfirm;
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -4359,26 +4583,27 @@ public class MobScalerScreen extends Screen {
             );
             this.addRenderableWidget(cancelButton);
         }
-        
+
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 10, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 10, TEXT_COLOR);
             
             // Рисуем сообщение
-            drawCenteredString(poseStack, this.font, 
+            guiGraphics.drawCenteredString(this.font, 
                 getTranslatedText("gui.mobscaler.confirm.delete.player_dimension", dimensionId).getString(), 
                 this.width / 2, dialogY + 30, TEXT_COLOR);
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -4553,30 +4778,70 @@ this.contentButtons.add(attributeTypeButton);
                                   "player." + selectedDimension + ".nightArmorToughnessMultiplier", modifiers.getNightArmorToughnessMultiplier());
             }
             else if (currentAttributeDisplayType == AttributeDisplayType.ADVANCED) {
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.follow_range").getString(), 
-                                  "player." + selectedDimension + ".nightFollowRangeAddition", modifiers.getNightFollowRangeAddition(),
-                                  "player." + selectedDimension + ".nightFollowRangeMultiplier", modifiers.getNightFollowRangeMultiplier());
-            startY += spacing;
+            String prefix = "player." + selectedDimension;
+            List<PlayerAttributeData> nightAttributes = java.util.List.of(
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.follow_range").getString(),
+                    "nightFollowRangeAddition", modifiers.getNightFollowRangeAddition(),
+                    "nightFollowRangeMultiplier", modifiers.getNightFollowRangeMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.flying_speed").getString(),
+                    "nightFlyingSpeedAddition", modifiers.getNightFlyingSpeedAddition(),
+                    "nightFlyingSpeedMultiplier", modifiers.getNightFlyingSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.luck").getString(),
+                    "nightLuckAddition", modifiers.getNightLuckAddition(),
+                    "nightLuckMultiplier", modifiers.getNightLuckMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.swim_speed").getString(),
+                    "nightSwimSpeedAddition", modifiers.getNightSwimSpeedAddition(),
+                    "nightSwimSpeedMultiplier", modifiers.getNightSwimSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.reach_distance").getString(),
+                    "nightBlockReachAddition", modifiers.getNightBlockReachAddition(),
+                    "nightBlockReachMultiplier", modifiers.getNightBlockReachMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.entity_reach_distance").getString(),
+                    "nightEntityReachAddition", modifiers.getNightEntityReachAddition(),
+                    "nightEntityReachMultiplier", modifiers.getNightEntityReachMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.burning_time").getString(),
+                    "nightBurningTimeAddition", modifiers.getNightBurningTimeAddition(),
+                    "nightBurningTimeMultiplier", modifiers.getNightBurningTimeMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.fall_damage_multiplier").getString(),
+                    "nightFallDamageMultiplier", modifiers.getNightFallDamageMultiplier(),
+                    null, 1.0),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.explosion_knockback_resistance").getString(),
+                    "nightExplosionKnockbackResistanceAddition", modifiers.getNightExplosionKnockbackResistanceAddition(),
+                    "nightExplosionKnockbackResistanceMultiplier", modifiers.getNightExplosionKnockbackResistanceMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.jump_strength").getString(),
+                    "nightJumpStrengthAddition", modifiers.getNightJumpStrengthAddition(),
+                    "nightJumpStrengthMultiplier", modifiers.getNightJumpStrengthMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.mining_efficiency").getString(),
+                    "nightMiningEfficiencyAddition", modifiers.getNightMiningEfficiencyAddition(),
+                    "nightMiningEfficiencyMultiplier", modifiers.getNightMiningEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.movement_efficiency").getString(),
+                    "nightMovementEfficiencyAddition", modifiers.getNightMovementEfficiencyAddition(),
+                    "nightMovementEfficiencyMultiplier", modifiers.getNightMovementEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.oxygen_bonus").getString(),
+                    "nightOxygenBonusAddition", modifiers.getNightOxygenBonusAddition(),
+                    "nightOxygenBonusMultiplier", modifiers.getNightOxygenBonusMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.safe_fall_distance").getString(),
+                    "nightSafeFallDistanceAddition", modifiers.getNightSafeFallDistanceAddition(),
+                    "nightSafeFallDistanceMultiplier", modifiers.getNightSafeFallDistanceMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.block_break_speed").getString(),
+                    "nightBlockBreakSpeedAddition", modifiers.getNightBlockBreakSpeedAddition(),
+                    "nightBlockBreakSpeedMultiplier", modifiers.getNightBlockBreakSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.step_height").getString(),
+                    "nightStepHeightAddition", modifiers.getNightStepHeightAddition(),
+                    "nightStepHeightMultiplier", modifiers.getNightStepHeightMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.submerged_mining_speed").getString(),
+                    "nightSubmergedMiningSpeedAddition", modifiers.getNightSubmergedMiningSpeedAddition(),
+                    "nightSubmergedMiningSpeedMultiplier", modifiers.getNightSubmergedMiningSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.water_movement_efficiency").getString(),
+                    "nightWaterMovementEfficiencyAddition", modifiers.getNightWaterMovementEfficiencyAddition(),
+                    "nightWaterMovementEfficiencyMultiplier", modifiers.getNightWaterMovementEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.sneaking_speed").getString(),
+                    "nightSneakingSpeedAddition", modifiers.getNightSneakingSpeedAddition(),
+                    "nightSneakingSpeedMultiplier", modifiers.getNightSneakingSpeedMultiplier())
+            );
+            startY = renderPlayerAttributesTwoColumns(nightAttributes, startX, startY, spacing, prefix);
+            }
 
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.flying_speed").getString(), 
-                                  "player." + selectedDimension + ".nightFlyingSpeedAddition", modifiers.getNightFlyingSpeedAddition(),
-                                  "player." + selectedDimension + ".nightFlyingSpeedMultiplier", modifiers.getNightFlyingSpeedMultiplier());
-            startY += spacing;
-
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.luck").getString(), 
-                                  "player." + selectedDimension + ".nightLuckAddition", modifiers.getNightLuckAddition(),
-                                  "player." + selectedDimension + ".nightLuckMultiplier", modifiers.getNightLuckMultiplier());
-            startY += spacing;
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.reach_distance").getString(), 
-                                  "player." + selectedDimension + ".nightReachDistanceAddition", modifiers.getNightReachDistanceAddition(),
-                                  "player." + selectedDimension + ".nightReachDistanceMultiplier", modifiers.getNightReachDistanceMultiplier());
-            startY += spacing;
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.swim_speed").getString(), 
-                                  "player." + selectedDimension + ".nightSwimSpeedAddition", modifiers.getNightSwimSpeedAddition(),
-                                  "player." + selectedDimension + ".nightSwimSpeedMultiplier", modifiers.getNightSwimSpeedMultiplier());
-            }       
-            
-        } 
+        }
         else {
             // Добавляем поля для дневных настроек в формате "Атрибут ___ х ___"
             if (currentAttributeDisplayType == AttributeDisplayType.BASIC) {
@@ -4619,29 +4884,64 @@ this.contentButtons.add(attributeTypeButton);
                                   "player." + selectedDimension + ".armorToughnessMultiplier", modifiers.getArmorToughnessMultiplier());
             }
             else if (currentAttributeDisplayType == AttributeDisplayType.ADVANCED) {
-                addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.follow_range").getString(), 
-                                  "player." + selectedDimension + ".followRangeAddition", modifiers.getFollowRangeAddition(),
-                                  "player." + selectedDimension + ".followRangeMultiplier", modifiers.getFollowRangeMultiplier());
-            startY += spacing;
-
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.flying_speed").getString(), 
-                                  "player." + selectedDimension + ".flyingSpeedAddition", modifiers.getFlyingSpeedAddition(),
-                                  "player." + selectedDimension + ".flyingSpeedMultiplier", modifiers.getFlyingSpeedMultiplier());
-            startY += spacing;
-            
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.luck").getString(), 
-                                  "player." + selectedDimension + ".luckAddition", modifiers.getLuckAddition(),
-                                  "player." + selectedDimension + ".luckMultiplier", modifiers.getLuckMultiplier());
-            startY += spacing;
-
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.reach_distance").getString(), 
-                                  "player." + selectedDimension + ".reachDistanceAddition", modifiers.getReachDistanceAddition(),
-                                  "player." + selectedDimension + ".reachDistanceMultiplier", modifiers.getReachDistanceMultiplier());
-            startY += spacing;
-
-            addPlayerAttributePair(startX, startY, getTranslatedText("gui.mobscaler.swim_speed").getString(), 
-                                  "player." + selectedDimension + ".swimSpeedAddition", modifiers.getSwimSpeedAddition(),
-                                  "player." + selectedDimension + ".swimSpeedMultiplier", modifiers.getSwimSpeedMultiplier());      
+            String prefix = "player." + selectedDimension;
+            List<PlayerAttributeData> dayAttributes = java.util.List.of(
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.follow_range").getString(),
+                    "followRangeAddition", modifiers.getFollowRangeAddition(),
+                    "followRangeMultiplier", modifiers.getFollowRangeMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.flying_speed").getString(),
+                    "flyingSpeedAddition", modifiers.getFlyingSpeedAddition(),
+                    "flyingSpeedMultiplier", modifiers.getFlyingSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.luck").getString(),
+                    "luckAddition", modifiers.getLuckAddition(),
+                    "luckMultiplier", modifiers.getLuckMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.reach_distance").getString(),
+                    "blockReachAddition", modifiers.getBlockReachAddition(),
+                    "blockReachMultiplier", modifiers.getBlockReachMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.entity_reach_distance").getString(),
+                    "entityReachAddition", modifiers.getEntityReachAddition(),
+                    "entityReachMultiplier", modifiers.getEntityReachMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.burning_time").getString(),
+                    "burningTimeAddition", modifiers.getBurningTimeAddition(),
+                    "burningTimeMultiplier", modifiers.getBurningTimeMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.fall_damage_multiplier").getString(),
+                    "fallDamageMultiplier", modifiers.getFallDamageMultiplier(),
+                    null, 1.0),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.explosion_knockback_resistance").getString(),
+                    "explosionKnockbackResistanceAddition", modifiers.getExplosionKnockbackResistanceAddition(),
+                    "explosionKnockbackResistanceMultiplier", modifiers.getExplosionKnockbackResistanceMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.jump_strength").getString(),
+                    "jumpStrengthAddition", modifiers.getJumpStrengthAddition(),
+                    "jumpStrengthMultiplier", modifiers.getJumpStrengthMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.mining_efficiency").getString(),
+                    "miningEfficiencyAddition", modifiers.getMiningEfficiencyAddition(),
+                    "miningEfficiencyMultiplier", modifiers.getMiningEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.movement_efficiency").getString(),
+                    "movementEfficiencyAddition", modifiers.getMovementEfficiencyAddition(),
+                    "movementEfficiencyMultiplier", modifiers.getMovementEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.oxygen_bonus").getString(),
+                    "oxygenBonusAddition", modifiers.getOxygenBonusAddition(),
+                    "oxygenBonusMultiplier", modifiers.getOxygenBonusMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.safe_fall_distance").getString(),
+                    "safeFallDistanceAddition", modifiers.getSafeFallDistanceAddition(),
+                    "safeFallDistanceMultiplier", modifiers.getSafeFallDistanceMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.block_break_speed").getString(),
+                    "blockBreakSpeedAddition", modifiers.getBlockBreakSpeedAddition(),
+                    "blockBreakSpeedMultiplier", modifiers.getBlockBreakSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.step_height").getString(),
+                    "stepHeightAddition", modifiers.getStepHeightAddition(),
+                    "stepHeightMultiplier", modifiers.getStepHeightMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.submerged_mining_speed").getString(),
+                    "submergedMiningSpeedAddition", modifiers.getSubmergedMiningSpeedAddition(),
+                    "submergedMiningSpeedMultiplier", modifiers.getSubmergedMiningSpeedMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.water_movement_efficiency").getString(),
+                    "waterMovementEfficiencyAddition", modifiers.getWaterMovementEfficiencyAddition(),
+                    "waterMovementEfficiencyMultiplier", modifiers.getWaterMovementEfficiencyMultiplier()),
+                new PlayerAttributeData(getTranslatedText("gui.mobscaler.sneaking_speed").getString(),
+                    "SneakingSpeedAddition", modifiers.getSneakingSpeedAddition(),
+                    "SneakingSpeedMultiplier", modifiers.getSneakingSpeedMultiplier())
+            );
+            startY = renderPlayerAttributesTwoColumns(dayAttributes, startX, startY, spacing, prefix);
             }
         }
         // Добавляем поле для множителя гравитации
@@ -4702,41 +5002,77 @@ this.contentButtons.add(attributeTypeButton);
         additionMapping.setEditBox(additionBox);
         this.fieldMappings.add(additionMapping);
         
-        // Добавляем символ умножения между полями
-        addLabel("×", x + 195, y + 5);
-        
-        // Создаем поле для значения умножения
-        EditBox multiplierBox = new EditBox(this.font, x + 215, y, 35, 20, Component.literal("")) {
-            @Override
-            public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-                if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                    // Обрабатываем нажатие Enter
-                    setFocused(false);
-                    return true;
+        // Добавляем символ умножения между полями (только если есть multiplier)
+        if (multiplierPath != null) {
+            addLabel("×", x + 195, y + 5);
+
+            // Создаем поле для значения умножения
+            EditBox multiplierBox = new EditBox(this.font, x + 215, y, 35, 20, Component.literal("")) {
+                @Override
+                public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+                    if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                        // Обрабатываем нажатие Enter
+                        setFocused(false);
+                        return true;
+                    }
+                    return super.keyPressed(keyCode, scanCode, modifiers);
                 }
-                return super.keyPressed(keyCode, scanCode, modifiers);
-            }
-            
-            @Override
-            public void insertText(String text) {
-                // Заменяем запятые на точки при вводе
-                text = text.replace(",", ".");
-                // Проверяем, что после вставки текста значение останется допустимым числом
-                String newValue = new StringBuilder(getValue()).insert(getCursorPosition(), text).toString();
-                if (newValue.isEmpty() || newValue.matches("^-?\\d*\\.?\\d*$")) {
-                    super.insertText(text);
+
+                @Override
+                public void insertText(String text) {
+                    // Заменяем запятые на точки при вводе
+                    text = text.replace(",", ".");
+                    // Проверяем, что после вставки текста значение останется допустимым числом
+                    String newValue = new StringBuilder(getValue()).insert(getCursorPosition(), text).toString();
+                    if (newValue.isEmpty() || newValue.matches("^-?\\d*\\.?\\d*$")) {
+                        super.insertText(text);
+                    }
                 }
+            };
+
+            multiplierBox.setValue(String.format("%.1f", multiplierValue).replace(",", "."));
+            this.addRenderableWidget(multiplierBox);
+            this.textFields.add(multiplierBox);
+
+            // Добавляем маппинг поля умножения
+            FieldMapping multiplierMapping = new FieldMapping(multiplierPath, label);
+            multiplierMapping.setEditBox(multiplierBox);
+            this.fieldMappings.add(multiplierMapping);
+        }
+    }
+
+    /**
+     * Рендерит список атрибутов игрока в 2 колонки. Возвращает Y позицию после последнего элемента.
+     */
+    private int renderPlayerAttributesTwoColumns(List<PlayerAttributeData> attributes, int startX, int startY, int spacing, String prefix) {
+        int leftX = startX;
+        int rightX = startX + 280; // Смещение правой колонки
+        int halfSize = (attributes.size() + 1) / 2; // Размер левой колонки
+
+        int leftY = startY;
+        int rightY = startY;
+
+        for (int i = 0; i < attributes.size(); i++) {
+            PlayerAttributeData attr = attributes.get(i);
+            boolean isLeft = i < halfSize;
+            int x = isLeft ? leftX : rightX;
+            int y = isLeft ? leftY : rightY;
+
+            String additionFullPath = prefix + "." + attr.additionField();
+            String multiplierFullPath = attr.multiplierField() != null ? prefix + "." + attr.multiplierField() : null;
+
+            addPlayerAttributePair(x, y, attr.label(),
+                                  additionFullPath, attr.additionValue(),
+                                  multiplierFullPath, attr.multiplierValue());
+
+            if (isLeft) {
+                leftY += spacing;
+            } else {
+                rightY += spacing;
             }
-        };
-        
-        multiplierBox.setValue(String.format("%.1f", multiplierValue).replace(",", "."));
-        this.addRenderableWidget(multiplierBox);
-        this.textFields.add(multiplierBox);
-        
-        // Добавляем маппинг поля умножения
-        FieldMapping multiplierMapping = new FieldMapping(multiplierPath, label);
-        multiplierMapping.setEditBox(multiplierBox);
-        this.fieldMappings.add(multiplierMapping);
+        }
+
+        return Math.max(leftY, rightY);
     }
 
     /**
@@ -4900,7 +5236,12 @@ this.contentButtons.add(attributeTypeButton);
         public AddPlayerDimensionDialog() {
             super(getTranslatedText("gui.mobscaler.add_dimension_button"));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -5040,22 +5381,23 @@ this.contentButtons.add(attributeTypeButton);
             
             return super.keyPressed(keyCode, scanCode, modifiers);
         }
-        
+
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_dimension_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_dimension_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем предложения
             if (!suggestions.isEmpty()) {
@@ -5065,7 +5407,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, suggestionX + suggestionWidth, 
+                guiGraphics.fill(suggestionX, suggestionY, suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 0x80000000);
                 
                 // Отрисовка предложений
@@ -5074,18 +5416,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделение выбранного предложения
                     if (isSelected) {
-                        fill(poseStack, suggestionX, suggestionY + (i - scrollOffset) * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + (i - scrollOffset) * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i - scrollOffset + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestions.get(i), 
+                    guiGraphics.drawString(this.font, suggestions.get(i), 
                                suggestionX + 5, suggestionY + (i - scrollOffset) * suggestionHeight + 6, 
                                isSelected ? 0xFFFFFF00 : TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5112,19 +5454,19 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty() && suggestions.size() > MAX_VISIBLE_SUGGESTIONS) {
-                if (delta > 0) {
+                if (scrollDeltaY > 0) {
                     scrollOffset = Math.max(0, scrollOffset - 1);
                 } else {
                     scrollOffset = Math.min(scrollOffset + 1, suggestions.size() - MAX_VISIBLE_SUGGESTIONS);
                 }
                 return true;
             }
-            
-            return super.mouseScrolled(mouseX, mouseY, delta);
+
+            return super.mouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
         }
-        
+
         @Override
         public void onClose() {
             super.onClose();
@@ -5142,16 +5484,16 @@ this.contentButtons.add(attributeTypeButton);
     private double getBaseAttributeValue(String entityId, String attributeName) {
         try {
             // Получаем тип сущности из регистра
-            net.minecraft.world.entity.EntityType<?> entityType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
-                new net.minecraft.resources.ResourceLocation(entityId)
+            net.minecraft.world.entity.EntityType<?> entityType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(
+                net.minecraft.resources.ResourceLocation.parse(entityId)
             );
-            
+
             if (entityType != null) {
                 // Создаем временную сущность для получения атрибутов
                 net.minecraft.world.entity.Entity entity = entityType.create(Minecraft.getInstance().level);
                 if (entity instanceof LivingEntity livingEntity) {
                     // Определяем, какой атрибут нам нужен
-                    net.minecraft.world.entity.ai.attributes.Attribute attribute = null;
+                    net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute = null;
                     if (attributeName.contains("Health")) {
                         attribute = net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH;
                     } else if (attributeName.contains("Armor")) {
@@ -5174,8 +5516,44 @@ this.contentButtons.add(attributeTypeButton);
                         attribute = net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS;
                     } else if (attributeName.contains("Luck")) {
                         attribute = net.minecraft.world.entity.ai.attributes.Attributes.LUCK;
+                    } else if (attributeName.contains("SwimSpeed")) {
+                        attribute = net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED;
+                    } else if (attributeName.contains("Swim")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.WATER_MOVEMENT_EFFICIENCY;
+                    } else if (attributeName.contains("Reach") || attributeName.contains("BlockReach")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE;
+                    } else if (attributeName.contains("EntityReach")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE;
+                    } else if (attributeName.contains("Jump")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH;
+                    } else if (attributeName.contains("MiningEfficiency")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.MINING_EFFICIENCY;
+                    } else if (attributeName.contains("BlockBreak")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_BREAK_SPEED;
+                    } else if (attributeName.contains("StepHeight")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT;
+                    } else if (attributeName.contains("SafeFall")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE;
+                    } else if (attributeName.contains("Submerged")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.SUBMERGED_MINING_SPEED;
+                    } else if (attributeName.contains("Gravity")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY;
+                    } else if (attributeName.contains("Nametag")) {
+                        attribute = net.neoforged.neoforge.common.NeoForgeMod.NAMETAG_DISTANCE;
+                    } else if (attributeName.contains("Sneaking")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.SNEAKING_SPEED;
+                    } else if (attributeName.contains("Explosion")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.EXPLOSION_KNOCKBACK_RESISTANCE;
+                    } else if (attributeName.contains("FallDamage")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.FALL_DAMAGE_MULTIPLIER;
+                    } else if (attributeName.contains("Burning")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.BURNING_TIME;
+                    } else if (attributeName.contains("Oxygen")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.OXYGEN_BONUS;
+                    } else if (attributeName.contains("MovementEfficiency")) {
+                        attribute = net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_EFFICIENCY;
                     }
-                    
+
                     if (attribute != null) {
                         AttributeInstance attr = livingEntity.getAttribute(attribute);
                         if (attr != null) {
@@ -5198,14 +5576,48 @@ this.contentButtons.add(attributeTypeButton);
         
         return 0.0;
     }
+
+    // Получение множителя сложности для здоровья
+    private double getHealthDifficultyMultiplier() {
+        try {
+            net.minecraft.world.level.Level level = Minecraft.getInstance().level;
+            if (level != null) {
+                Difficulty difficulty = level.getDifficulty();
+                return EntityHandler.getDifficultyMultiplier(difficulty, true);
+            }
+        } catch (Exception ignored) {}
+        return 1.0;
+    }
+
+    // Получение множителя сложности для урона
+    private double getDamageDifficultyMultiplier() {
+        try {
+            net.minecraft.world.level.Level level = Minecraft.getInstance().level;
+            if (level != null) {
+                Difficulty difficulty = level.getDifficulty();
+                return EntityHandler.getDifficultyMultiplier(difficulty, false);
+            }
+        } catch (Exception ignored) {}
+        return 1.0;
+    }
     
     // Метод для отображения формулы расчета
     private void addAttributeFormula(int x, int y, String entityId, String attributeName, double addition, double multiplier) {
+        addAttributeFormula(x, y, entityId, attributeName, addition, multiplier, 1.0);
+    }
+
+    // Метод для отображения формулы расчета с множителем сложности
+    private void addAttributeFormula(int x, int y, String entityId, String attributeName, double addition, double multiplier, double difficultyMultiplier) {
         try {
             double baseValue = getBaseAttributeValue(entityId, attributeName);
-            double result = (baseValue + addition) * multiplier;
-            
-            String formula = String.format("(%.1f + %.1f) × %.2f = %.1f", baseValue, addition, multiplier, result);
+            double result = (baseValue + addition) * multiplier * difficultyMultiplier;
+
+            String formula;
+            if (difficultyMultiplier != 1.0) {
+                formula = String.format("(%.1f + %.1f) × %.2f × %.2f = %.1f", baseValue, addition, multiplier, difficultyMultiplier, result);
+            } else {
+                formula = String.format("(%.1f + %.1f) × %.2f = %.1f", baseValue, addition, multiplier, result);
+            }
             addLabel(formula, x, y);
         } catch (Exception e) {
             Minecraft.getInstance().player.displayClientMessage(
@@ -5288,7 +5700,12 @@ this.contentButtons.add(attributeTypeButton);
         public AddModToBlacklistDialog() {
             super(getTranslatedText("gui.mobscaler.blacklist.add_mod_title"));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -5348,8 +5765,8 @@ this.contentButtons.add(attributeTypeButton);
             scrollOffset = 0;
             
             // Получаем список всех модов
-            net.minecraftforge.fml.ModList modList = net.minecraftforge.fml.ModList.get();
-            for (net.minecraftforge.forgespi.language.IModInfo mod : modList.getMods()) {
+            net.neoforged.fml.ModList modList = net.neoforged.fml.ModList.get();
+            for (net.neoforged.neoforgespi.language.IModInfo mod : modList.getMods()) {
                 String modId = mod.getModId();
                 if (modId.toLowerCase().contains(input.toLowerCase())) {
                     suggestions.add(modId);
@@ -5402,22 +5819,23 @@ this.contentButtons.add(attributeTypeButton);
                 }
             }
         }
-        
+
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mod_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mod_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем список предложений
             if (!suggestions.isEmpty()) {
@@ -5427,7 +5845,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Рисуем фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, 
+                guiGraphics.fill( suggestionX, suggestionY, 
                      suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 
                      0x80000000);
@@ -5439,18 +5857,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделяем выбранное предложение
                     if (index == selectedSuggestion) {
-                        fill(poseStack, suggestionX, suggestionY + i * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + i * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, 
+                    guiGraphics.drawString(this.font, suggestion, 
                                suggestionX + 5, suggestionY + i * suggestionHeight + 6, 
                                TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5508,22 +5926,22 @@ this.contentButtons.add(attributeTypeButton);
             
             return super.mouseClicked(mouseX, mouseY, button);
         }
-        
+
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty() && suggestions.size() > MAX_VISIBLE_SUGGESTIONS) {
-                if (delta > 0) {
+                if (scrollDeltaY > 0) {
                     scrollOffset = Math.max(0, scrollOffset - 1);
                 } else {
                     scrollOffset = Math.min(scrollOffset + 1, suggestions.size() - MAX_VISIBLE_SUGGESTIONS);
                 }
                 return true;
             }
-            
-            return super.mouseScrolled(mouseX, mouseY, delta);
+
+            return super.mouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
         }
     }
-    
+
     // Класс диалога для добавления моба в черный список
     private class AddEntityToBlacklistDialog extends Screen {
         private final int dialogWidth = 400;
@@ -5537,7 +5955,12 @@ this.contentButtons.add(attributeTypeButton);
         public AddEntityToBlacklistDialog() {
             super(getTranslatedText("gui.mobscaler.blacklist.add_entity_title"));
         }
-        
+
+        @Override
+        public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Отключаем размытие фона
+        }
+
         @Override
         protected void init() {
             super.init();
@@ -5597,7 +6020,7 @@ this.contentButtons.add(attributeTypeButton);
             scrollOffset = 0;
             
             // Получаем список всех типов сущностей
-            for (ResourceLocation entityId : net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKeys()) {
+            for (ResourceLocation entityId : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet()) {
                 String entityIdStr = entityId.toString();
                 if (entityIdStr.toLowerCase().contains(input.toLowerCase())) {
                     suggestions.add(entityIdStr);
@@ -5650,22 +6073,23 @@ this.contentButtons.add(attributeTypeButton);
                 }
             }
         }
-        
+
         @Override
-        public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-            this.renderBackground(poseStack);
-            
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            // Затемнение фона (без размытия)
+            guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+
             int dialogX = (this.width - dialogWidth) / 2;
             int dialogY = (this.height - dialogHeight) / 2;
             
             // Рисуем фон диалога
-            fill(poseStack, dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
+            guiGraphics.fill(dialogX, dialogY, dialogX + dialogWidth, dialogY + dialogHeight, BACKGROUND_COLOR);
             
             // Рисуем заголовок
-            drawCenteredString(poseStack, this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, dialogY + 20, TEXT_COLOR);
             
             // Рисуем подсказку
-            drawString(poseStack, this.font, getTranslatedText("gui.mobscaler.enter_mob_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
+            guiGraphics.drawString(this.font, getTranslatedText("gui.mobscaler.enter_mob_id"), dialogX + 20, dialogY + 45, TEXT_COLOR);
             
             // Рисуем список предложений
             if (!suggestions.isEmpty()) {
@@ -5675,7 +6099,7 @@ this.contentButtons.add(attributeTypeButton);
                 int suggestionHeight = 20;
                 
                 // Рисуем фон для списка предложений
-                fill(poseStack, suggestionX, suggestionY, 
+                guiGraphics.fill(suggestionX, suggestionY, 
                      suggestionX + suggestionWidth, 
                      suggestionY + Math.min(suggestions.size(), MAX_VISIBLE_SUGGESTIONS) * suggestionHeight, 
                      0x80000000);
@@ -5687,18 +6111,18 @@ this.contentButtons.add(attributeTypeButton);
                     
                     // Выделяем выбранное предложение
                     if (index == selectedSuggestion) {
-                        fill(poseStack, suggestionX, suggestionY + i * suggestionHeight, 
+                        guiGraphics.fill(suggestionX, suggestionY + i * suggestionHeight, 
                              suggestionX + suggestionWidth, suggestionY + (i + 1) * suggestionHeight, 
                              HIGHLIGHT_COLOR);
                     }
                     
-                    drawString(poseStack, this.font, suggestion, 
+                    guiGraphics.drawString(this.font, suggestion, 
                                suggestionX + 5, suggestionY + i * suggestionHeight + 6, 
                                TEXT_COLOR);
                 }
             }
             
-            super.render(poseStack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         
         @Override
@@ -5756,19 +6180,19 @@ this.contentButtons.add(attributeTypeButton);
             
             return super.mouseClicked(mouseX, mouseY, button);
         }
-        
+
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
             if (!suggestions.isEmpty() && suggestions.size() > MAX_VISIBLE_SUGGESTIONS) {
-                if (delta > 0) {
+                if (scrollDeltaY > 0) {
                     scrollOffset = Math.max(0, scrollOffset - 1);
                 } else {
                     scrollOffset = Math.min(scrollOffset + 1, suggestions.size() - MAX_VISIBLE_SUGGESTIONS);
                 }
                 return true;
             }
-            
-            return super.mouseScrolled(mouseX, mouseY, delta);
+
+            return super.mouseScrolled(mouseX, mouseY, scrollDeltaX, scrollDeltaY);
         }
     }
 
@@ -5788,9 +6212,9 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             // Рисуем фон панели
-            fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, 0x80000000);
+            guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0x80000000);
             
             // Рисуем элементы списка
             int visibleItems = Math.min(items.size() - scrollOffset, maxVisibleItems);
@@ -5805,52 +6229,52 @@ this.contentButtons.add(attributeTypeButton);
                 }
                 
                 // Рисуем элемент
-                drawString(poseStack, font, displayName, this.x + 5, this.y + i * itemHeight + 5, TEXT_COLOR);
+                guiGraphics.drawString(font, displayName, this.getX() + 5, this.getY() + i * itemHeight + 5, TEXT_COLOR);
                 
                 // Рисуем кнопку удаления
-                int buttonX = this.x + this.width - 20;
-                int buttonY = this.y + i * itemHeight;
+                int buttonX = this.getX() + this.getWidth() - 20;
+                int buttonY = this.getY() + i * itemHeight;
                 
                 // Проверяем, наведена ли мышь на кнопку удаления
                 boolean isHovered = mouseX >= buttonX && mouseX <= buttonX + 15 && 
                                    mouseY >= buttonY && mouseY <= buttonY + 15;
                 
                 // Рисуем фон кнопки
-                fill(poseStack, buttonX, buttonY, buttonX + 15, buttonY + 15, 
+                guiGraphics.fill(buttonX, buttonY, buttonX + 15, buttonY + 15, 
                     isHovered ? 0xFFFF0000 : 0xFFAA0000);
                 
                 // Рисуем X
-                drawCenteredString(poseStack, font, "X", buttonX + 7, buttonY + 3, 0xFFFFFFFF);
+                guiGraphics.drawCenteredString(font, "X", buttonX + 7, buttonY + 3, 0xFFFFFFFF);
             }
             
             // Рисуем полосу прокрутки, если элементов больше, чем может поместиться
             if (items.size() > maxVisibleItems) {
-                int scrollBarX = this.x + this.width - 5;
+                int scrollBarX = this.getX() + this.getWidth() - 5;
                 int scrollBarWidth = 3;
                 
                 // Фон полосы прокрутки
-                fill(poseStack, scrollBarX, this.y, scrollBarX + scrollBarWidth, this.y + this.height, 0x80AAAAAA);
+                guiGraphics.fill(scrollBarX, this.getY(), scrollBarX + scrollBarWidth, this.getY() + this.getHeight(), 0x80AAAAAA);
                 
                 // Ползунок прокрутки
                 float scrollRatio = (float) scrollOffset / (items.size() - maxVisibleItems);
-                int thumbHeight = Math.max(20, this.height * maxVisibleItems / items.size());
-                int thumbY = this.y + (int) (scrollRatio * (this.height - thumbHeight));
+                int thumbHeight = Math.max(20, this.getHeight() * maxVisibleItems / items.size());
+                int thumbY = this.getY() + (int) (scrollRatio * (this.getHeight() - thumbHeight));
                 
-                fill(poseStack, scrollBarX, thumbY, scrollBarX + scrollBarWidth, thumbY + thumbHeight, 0xFFFFFFFF);
+                guiGraphics.fill(scrollBarX, thumbY, scrollBarX + scrollBarWidth, thumbY + thumbHeight, 0xFFFFFFFF);
             }
         }
         
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (button == 0 && mouseX >= this.x && mouseX <= this.x + this.width && 
-                mouseY >= this.y && mouseY <= this.y + this.height) {
+            if (button == 0 && mouseX >= this.getX() && mouseX <= this.getX() + this.getWidth() && 
+                mouseY >= this.getY() && mouseY <= this.getY() + this.getHeight()) {
                 
                 // Проверяем, кликнули ли на кнопку удаления
                 int visibleItems = Math.min(items.size() - scrollOffset, maxVisibleItems);
                 for (int i = 0; i < visibleItems; i++) {
                     int index = i + scrollOffset;
-                    int buttonX = this.x + this.width - 20;
-                    int buttonY = this.y + i * itemHeight;
+                    int buttonX = this.getX() + this.getWidth() - 20;
+                    int buttonY = this.getY() + i * itemHeight;
                     
                     if (mouseX >= buttonX && mouseX <= buttonX + 15 && 
                         mouseY >= buttonY && mouseY <= buttonY + 15) {
@@ -5872,13 +6296,13 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-            if (mouseX >= this.x && mouseX <= this.x + this.width && 
-                mouseY >= this.y && mouseY <= this.y + this.height) {
-                
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
+            if (mouseX >= this.getX() && mouseX <= this.getX() + this.getWidth() &&
+                mouseY >= this.getY() && mouseY <= this.getY() + this.getHeight()) {
+
                 if (items.size() > maxVisibleItems) {
                     int maxScroll = items.size() - maxVisibleItems;
-                    scrollOffset = Math.max(0, Math.min(scrollOffset - (int) Math.signum(delta), maxScroll));
+                    scrollOffset = Math.max(0, Math.min(scrollOffset - (int) Math.signum(scrollDeltaY), maxScroll));
                     return true;
                 }
             }
@@ -5886,9 +6310,9 @@ this.contentButtons.add(attributeTypeButton);
         }
         
         @Override
-        public void updateNarration(NarrationElementOutput narrationElementOutput) {
+        public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
             // Реализация для доступности
-            narrationElementOutput.add(NarratedElementType.TITLE, Component.literal("Черный список"));
+            narrationElementOutput.add(NarratedElementType.TITLE, getTranslatedText("gui.mobscaler.blacklist"));
         }
     }
-} 
+}  

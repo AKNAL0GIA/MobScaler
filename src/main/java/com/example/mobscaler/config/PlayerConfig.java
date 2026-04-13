@@ -8,7 +8,7 @@ import java.util.List;
 public class PlayerConfig {
     @SerializedName("playerBlacklist")
     private final Map<String, List<String>> playerBlacklist;
-    
+
     @SerializedName("playerModifiers")
     private final Map<String, PlayerModifiers> playerModifiers;
 
@@ -41,7 +41,7 @@ public class PlayerConfig {
     public static class PlayerModifiers {
         @SerializedName("enableNightScaling")
         private final boolean enableNightScaling;
-        
+
         // Дневные настройки
         @SerializedName("healthAddition")
         private final double healthAddition;
@@ -91,10 +91,64 @@ public class PlayerConfig {
         private final double swimSpeedAddition;
         @SerializedName("swimSpeedMultiplier")
         private final double swimSpeedMultiplier;
-        @SerializedName("reachDistanceAddition")
-        private final double reachDistanceAddition;
-        @SerializedName("reachDistanceMultiplier")
-        private final double reachDistanceMultiplier;
+        @SerializedName("blockReachAddition")
+        private final double blockReachAddition;
+        @SerializedName("blockReachMultiplier")
+        private final double blockReachMultiplier;
+        @SerializedName("entityReachAddition")
+        private final double entityReachAddition;
+        @SerializedName("entityReachMultiplier")
+        private final double entityReachMultiplier;
+        @SerializedName("burningTimeAddition")
+        private final double burningTimeAddition;
+        @SerializedName("burningTimeMultiplier")
+        private final double burningTimeMultiplier;
+        @SerializedName("fallDamageMultiplier")
+        private final double fallDamageMultiplier;
+        @SerializedName("explosionKnockbackResistanceAddition")
+        private final double explosionKnockbackResistanceAddition;
+        @SerializedName("explosionKnockbackResistanceMultiplier")
+        private final double explosionKnockbackResistanceMultiplier;
+        @SerializedName("jumpStrengthAddition")
+        private final double jumpStrengthAddition;
+        @SerializedName("jumpStrengthMultiplier")
+        private final double jumpStrengthMultiplier;
+        @SerializedName("miningEfficiencyAddition")
+        private final double miningEfficiencyAddition;
+        @SerializedName("miningEfficiencyMultiplier")
+        private final double miningEfficiencyMultiplier;
+        @SerializedName("movementEfficiencyAddition")
+        private final double movementEfficiencyAddition;
+        @SerializedName("movementEfficiencyMultiplier")
+        private final double movementEfficiencyMultiplier;
+        @SerializedName("oxygenBonusAddition")
+        private final double oxygenBonusAddition;
+        @SerializedName("oxygenBonusMultiplier")
+        private final double oxygenBonusMultiplier;
+        @SerializedName("safeFallDistanceAddition")
+        private final double safeFallDistanceAddition;
+        @SerializedName("safeFallDistanceMultiplier")
+        private final double safeFallDistanceMultiplier;
+        @SerializedName("blockBreakSpeedAddition")
+        private final double blockBreakSpeedAddition;
+        @SerializedName("blockBreakSpeedMultiplier")
+        private final double blockBreakSpeedMultiplier;
+        @SerializedName("stepHeightAddition")
+        private final double stepHeightAddition;
+        @SerializedName("stepHeightMultiplier")
+        private final double stepHeightMultiplier;
+        @SerializedName("submergedMiningSpeedAddition")
+        private final double submergedMiningSpeedAddition;
+        @SerializedName("submergedMiningSpeedMultiplier")
+        private final double submergedMiningSpeedMultiplier;
+        @SerializedName("waterMovementEfficiencyAddition")
+        private final double waterMovementEfficiencyAddition;
+        @SerializedName("waterMovementEfficiencyMultiplier")
+        private final double waterMovementEfficiencyMultiplier;
+        @SerializedName("SneakingSpeedAddition")
+        private final double SneakingSpeedAddition;
+        @SerializedName("SneakingSpeedMultiplier")
+        private final double SneakingSpeedMultiplier;
         // Ночные настройки
         @SerializedName("nightHealthAddition")
         private final double nightHealthAddition;
@@ -146,10 +200,64 @@ public class PlayerConfig {
         private final double nightSwimSpeedAddition;
         @SerializedName("nightSwimSpeedMultiplier")
         private final double nightSwimSpeedMultiplier;
-        @SerializedName("nightReachDistanceAddition")
-        private final double nightReachDistanceAddition;
-        @SerializedName("nightReachDistanceMultiplier")
-        private final double nightReachDistanceMultiplier;
+        @SerializedName("nightBlockReachAddition")
+        private final double nightBlockReachAddition;
+        @SerializedName("nightBlockReachMultiplier")
+        private final double nightBlockReachMultiplier;
+        @SerializedName("nightEntityReachAddition")
+        private final double nightEntityReachAddition;
+        @SerializedName("nightEntityReachMultiplier")
+        private final double nightEntityReachMultiplier;
+        @SerializedName("nightBurningTimeAddition")
+        private final double nightBurningTimeAddition;
+        @SerializedName("nightBurningTimeMultiplier")
+        private final double nightBurningTimeMultiplier;
+        @SerializedName("nightFallDamageMultiplier")
+        private final double nightFallDamageMultiplier;
+        @SerializedName("nightExplosionKnockbackResistanceAddition")
+        private final double nightExplosionKnockbackResistanceAddition;
+        @SerializedName("nightExplosionKnockbackResistanceMultiplier")
+        private final double nightExplosionKnockbackResistanceMultiplier;
+        @SerializedName("nightJumpStrengthAddition")
+        private final double nightJumpStrengthAddition;
+        @SerializedName("nightJumpStrengthMultiplier")
+        private final double nightJumpStrengthMultiplier;
+        @SerializedName("nightMiningEfficiencyAddition")
+        private final double nightMiningEfficiencyAddition;
+        @SerializedName("nightMiningEfficiencyMultiplier")
+        private final double nightMiningEfficiencyMultiplier;
+        @SerializedName("nightMovementEfficiencyAddition")
+        private final double nightMovementEfficiencyAddition;
+        @SerializedName("nightMovementEfficiencyMultiplier")
+        private final double nightMovementEfficiencyMultiplier;
+        @SerializedName("nightOxygenBonusAddition")
+        private final double nightOxygenBonusAddition;
+        @SerializedName("nightOxygenBonusMultiplier")
+        private final double nightOxygenBonusMultiplier;
+        @SerializedName("nightSafeFallDistanceAddition")
+        private final double nightSafeFallDistanceAddition;
+        @SerializedName("nightSafeFallDistanceMultiplier")
+        private final double nightSafeFallDistanceMultiplier;
+        @SerializedName("nightBlockBreakSpeedAddition")
+        private final double nightBlockBreakSpeedAddition;
+        @SerializedName("nightBlockBreakSpeedMultiplier")
+        private final double nightBlockBreakSpeedMultiplier;
+        @SerializedName("nightStepHeightAddition")
+        private final double nightStepHeightAddition;
+        @SerializedName("nightStepHeightMultiplier")
+        private final double nightStepHeightMultiplier;
+        @SerializedName("nightSubmergedMiningSpeedAddition")
+        private final double nightSubmergedMiningSpeedAddition;
+        @SerializedName("nightSubmergedMiningSpeedMultiplier")
+        private final double nightSubmergedMiningSpeedMultiplier;
+        @SerializedName("nightWaterMovementEfficiencyAddition")
+        private final double nightWaterMovementEfficiencyAddition;
+        @SerializedName("nightWaterMovementEfficiencyMultiplier")
+        private final double nightWaterMovementEfficiencyMultiplier;
+        @SerializedName("nightSneakingSpeedAddition")
+        private final double nightSneakingSpeedAddition;
+        @SerializedName("nightSneakingSpeedMultiplier")
+        private final double nightSneakingSpeedMultiplier;
 
 
         public PlayerModifiers() {
@@ -179,8 +287,35 @@ public class PlayerConfig {
             this.luckMultiplier = 1.0;
             this.swimSpeedAddition = 0.0;
             this.swimSpeedMultiplier = 1.0;
-            this.reachDistanceAddition = 0.0;
-            this.reachDistanceMultiplier = 1.0;
+            this.blockReachAddition = 0.0;
+            this.blockReachMultiplier = 1.0;
+            this.entityReachAddition = 0.0;
+            this.entityReachMultiplier = 1.0;
+            this.burningTimeAddition = 0.0;
+            this.burningTimeMultiplier = 1.0;
+            this.fallDamageMultiplier = 1.0;
+            this.explosionKnockbackResistanceAddition = 0.0;
+            this.explosionKnockbackResistanceMultiplier = 1.0;
+            this.jumpStrengthAddition = 0.0;
+            this.jumpStrengthMultiplier = 1.0;
+            this.miningEfficiencyAddition = 0.0;
+            this.miningEfficiencyMultiplier = 1.0;
+            this.movementEfficiencyAddition = 0.0;
+            this.movementEfficiencyMultiplier = 1.0;
+            this.oxygenBonusAddition = 0.0;
+            this.oxygenBonusMultiplier = 1.0;
+            this.safeFallDistanceAddition = 0.0;
+            this.safeFallDistanceMultiplier = 1.0;
+            this.blockBreakSpeedAddition = 0.0;
+            this.blockBreakSpeedMultiplier = 1.0;
+            this.stepHeightAddition = 0.0;
+            this.stepHeightMultiplier = 1.0;
+            this.submergedMiningSpeedAddition = 0.0;
+            this.submergedMiningSpeedMultiplier = 1.0;
+            this.waterMovementEfficiencyAddition = 0.0;
+            this.waterMovementEfficiencyMultiplier = 1.0;
+            this.SneakingSpeedAddition = 0.0;
+            this.SneakingSpeedMultiplier = 1.0;
             // Ночные настройки
             this.nightHealthAddition = 0.0;
             this.nightHealthMultiplier = 1.0;
@@ -204,12 +339,38 @@ public class PlayerConfig {
             this.nightArmorToughnessMultiplier = 1.0;
             this.nightLuckAddition = 0.0;
             this.nightLuckMultiplier = 1.0;
-            // Множитель гравитации
             this.gravityMultiplier = 1.0;
             this.nightSwimSpeedAddition = 0.0;
             this.nightSwimSpeedMultiplier = 1.0;
-            this.nightReachDistanceAddition = 0.0;
-            this.nightReachDistanceMultiplier = 1.0;
+            this.nightBlockReachAddition = 0.0;
+            this.nightBlockReachMultiplier = 1.0;
+            this.nightEntityReachAddition = 0.0;
+            this.nightEntityReachMultiplier = 1.0;
+            this.nightBurningTimeAddition = 0.0;
+            this.nightBurningTimeMultiplier = 1.0;
+            this.nightFallDamageMultiplier = 1.0;
+            this.nightExplosionKnockbackResistanceAddition = 0.0;
+            this.nightExplosionKnockbackResistanceMultiplier = 1.0;
+            this.nightJumpStrengthAddition = 0.0;
+            this.nightJumpStrengthMultiplier = 1.0;
+            this.nightMiningEfficiencyAddition = 0.0;
+            this.nightMiningEfficiencyMultiplier = 1.0;
+            this.nightMovementEfficiencyAddition = 0.0;
+            this.nightMovementEfficiencyMultiplier = 1.0;
+            this.nightOxygenBonusAddition = 0.0;
+            this.nightOxygenBonusMultiplier = 1.0;
+            this.nightSafeFallDistanceAddition = 0.0;
+            this.nightSafeFallDistanceMultiplier = 1.0;
+            this.nightBlockBreakSpeedAddition = 0.0;
+            this.nightBlockBreakSpeedMultiplier = 1.0;
+            this.nightStepHeightAddition = 0.0;
+            this.nightStepHeightMultiplier = 1.0;
+            this.nightSubmergedMiningSpeedAddition = 0.0;
+            this.nightSubmergedMiningSpeedMultiplier = 1.0;
+            this.nightWaterMovementEfficiencyAddition = 0.0;
+            this.nightWaterMovementEfficiencyMultiplier = 1.0;
+            this.nightSneakingSpeedAddition = 0.0;
+            this.nightSneakingSpeedMultiplier = 1.0;
         }
 
         // Геттеры для дневных настроек
@@ -232,6 +393,41 @@ public class PlayerConfig {
         public double getFollowRangeMultiplier() { return followRangeMultiplier; }
         public double getFlyingSpeedAddition() { return flyingSpeedAddition; }
         public double getFlyingSpeedMultiplier() { return flyingSpeedMultiplier; }
+        public double getArmorToughnessAddition() { return armorToughnessAddition; }
+        public double getArmorToughnessMultiplier() { return armorToughnessMultiplier; }
+        public double getLuckAddition() { return luckAddition; }
+        public double getLuckMultiplier() { return luckMultiplier; }
+        public double getSwimSpeedAddition() { return swimSpeedAddition; }
+        public double getSwimSpeedMultiplier() { return swimSpeedMultiplier; }
+        public double getBlockReachAddition() { return blockReachAddition; }
+        public double getBlockReachMultiplier() { return blockReachMultiplier; }
+        public double getEntityReachAddition() { return entityReachAddition; }
+        public double getEntityReachMultiplier() { return entityReachMultiplier; }
+        public double getBurningTimeAddition() { return burningTimeAddition; }
+        public double getBurningTimeMultiplier() { return burningTimeMultiplier; }
+        public double getFallDamageMultiplier() { return fallDamageMultiplier; }
+        public double getExplosionKnockbackResistanceAddition() { return explosionKnockbackResistanceAddition; }
+        public double getExplosionKnockbackResistanceMultiplier() { return explosionKnockbackResistanceMultiplier; }
+        public double getJumpStrengthAddition() { return jumpStrengthAddition; }
+        public double getJumpStrengthMultiplier() { return jumpStrengthMultiplier; }
+        public double getMiningEfficiencyAddition() { return miningEfficiencyAddition; }
+        public double getMiningEfficiencyMultiplier() { return miningEfficiencyMultiplier; }
+        public double getMovementEfficiencyAddition() { return movementEfficiencyAddition; }
+        public double getMovementEfficiencyMultiplier() { return movementEfficiencyMultiplier; }
+        public double getOxygenBonusAddition() { return oxygenBonusAddition; }
+        public double getOxygenBonusMultiplier() { return oxygenBonusMultiplier; }
+        public double getSafeFallDistanceAddition() { return safeFallDistanceAddition; }
+        public double getSafeFallDistanceMultiplier() { return safeFallDistanceMultiplier; }
+        public double getBlockBreakSpeedAddition() { return blockBreakSpeedAddition; }
+        public double getBlockBreakSpeedMultiplier() { return blockBreakSpeedMultiplier; }
+        public double getStepHeightAddition() { return stepHeightAddition; }
+        public double getStepHeightMultiplier() { return stepHeightMultiplier; }
+        public double getSubmergedMiningSpeedAddition() { return submergedMiningSpeedAddition; }
+        public double getSubmergedMiningSpeedMultiplier() { return submergedMiningSpeedMultiplier; }
+        public double getWaterMovementEfficiencyAddition() { return waterMovementEfficiencyAddition; }
+        public double getWaterMovementEfficiencyMultiplier() { return waterMovementEfficiencyMultiplier; }
+        public double getSneakingSpeedAddition() { return SneakingSpeedAddition; }
+        public double getSneakingSpeedMultiplier() { return SneakingSpeedMultiplier; }
 
         // Геттеры для ночных настроек
         public double getNightHealthAddition() { return nightHealthAddition; }
@@ -252,27 +448,41 @@ public class PlayerConfig {
         public double getNightFollowRangeMultiplier() { return nightFollowRangeMultiplier; }
         public double getNightFlyingSpeedAddition() { return nightFlyingSpeedAddition; }
         public double getNightFlyingSpeedMultiplier() { return nightFlyingSpeedMultiplier; }
-        public double getArmorToughnessAddition() { return armorToughnessAddition; }
-        public double getArmorToughnessMultiplier() { return armorToughnessMultiplier; }
-        public double getLuckAddition() { return luckAddition; }
-        public double getLuckMultiplier() { return luckMultiplier; }
         public double getNightArmorToughnessAddition() { return nightArmorToughnessAddition; }
         public double getNightArmorToughnessMultiplier() { return nightArmorToughnessMultiplier; }
         public double getNightLuckAddition() { return nightLuckAddition; }
         public double getNightLuckMultiplier() { return nightLuckMultiplier; }
-        // Геттер для множителя гравитации
         public double getGravityMultiplier() { return gravityMultiplier; }
-        
-        // Геттеры для скорости плавания
-        public double getSwimSpeedAddition() { return swimSpeedAddition; }
-        public double getSwimSpeedMultiplier() { return swimSpeedMultiplier; }
         public double getNightSwimSpeedAddition() { return nightSwimSpeedAddition; }
         public double getNightSwimSpeedMultiplier() { return nightSwimSpeedMultiplier; }
-        
-        // Геттеры для дальности взаимодействия
-        public double getReachDistanceAddition() { return reachDistanceAddition; }
-        public double getReachDistanceMultiplier() { return reachDistanceMultiplier; }
-        public double getNightReachDistanceAddition() { return nightReachDistanceAddition; }
-        public double getNightReachDistanceMultiplier() { return nightReachDistanceMultiplier; }
+        public double getNightBlockReachAddition() { return nightBlockReachAddition; }
+        public double getNightBlockReachMultiplier() { return nightBlockReachMultiplier; }
+        public double getNightEntityReachAddition() { return nightEntityReachAddition; }
+        public double getNightEntityReachMultiplier() { return nightEntityReachMultiplier; }
+        public double getNightBurningTimeAddition() { return nightBurningTimeAddition; }
+        public double getNightBurningTimeMultiplier() { return nightBurningTimeMultiplier; }
+        public double getNightFallDamageMultiplier() { return nightFallDamageMultiplier; }
+        public double getNightExplosionKnockbackResistanceAddition() { return nightExplosionKnockbackResistanceAddition; }
+        public double getNightExplosionKnockbackResistanceMultiplier() { return nightExplosionKnockbackResistanceMultiplier; }
+        public double getNightJumpStrengthAddition() { return nightJumpStrengthAddition; }
+        public double getNightJumpStrengthMultiplier() { return nightJumpStrengthMultiplier; }
+        public double getNightMiningEfficiencyAddition() { return nightMiningEfficiencyAddition; }
+        public double getNightMiningEfficiencyMultiplier() { return nightMiningEfficiencyMultiplier; }
+        public double getNightMovementEfficiencyAddition() { return nightMovementEfficiencyAddition; }
+        public double getNightMovementEfficiencyMultiplier() { return nightMovementEfficiencyMultiplier; }
+        public double getNightOxygenBonusAddition() { return nightOxygenBonusAddition; }
+        public double getNightOxygenBonusMultiplier() { return nightOxygenBonusMultiplier; }
+        public double getNightSafeFallDistanceAddition() { return nightSafeFallDistanceAddition; }
+        public double getNightSafeFallDistanceMultiplier() { return nightSafeFallDistanceMultiplier; }
+        public double getNightBlockBreakSpeedAddition() { return nightBlockBreakSpeedAddition; }
+        public double getNightBlockBreakSpeedMultiplier() { return nightBlockBreakSpeedMultiplier; }
+        public double getNightStepHeightAddition() { return nightStepHeightAddition; }
+        public double getNightStepHeightMultiplier() { return nightStepHeightMultiplier; }
+        public double getNightSubmergedMiningSpeedAddition() { return nightSubmergedMiningSpeedAddition; }
+        public double getNightSubmergedMiningSpeedMultiplier() { return nightSubmergedMiningSpeedMultiplier; }
+        public double getNightWaterMovementEfficiencyAddition() { return nightWaterMovementEfficiencyAddition; }
+        public double getNightWaterMovementEfficiencyMultiplier() { return nightWaterMovementEfficiencyMultiplier; }
+        public double getNightSneakingSpeedAddition() { return nightSneakingSpeedAddition; }
+        public double getNightSneakingSpeedMultiplier() { return nightSneakingSpeedMultiplier; }
     }
-} 
+}

@@ -8,6 +8,7 @@ import com.example.mobscaler.events.EntityHandler;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -23,9 +24,45 @@ public class ReloadCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             Commands.literal("mobscaler")
-                .requires(source -> source.hasPermission(2)) // Requires operator permission (level 2)
+                .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("reload")
                     .executes(ReloadCommand::execute)
+                )
+                .then(Commands.literal("debug")
+                    .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(context -> {
+                            boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                            MobScalerConfig.setDebugLoggingEnabled(enabled);
+                            MobScalerConfig.save();
+
+                            String status = enabled
+                                ? Component.literal("enabled").withStyle(ChatFormatting.GREEN).getString()
+                                : Component.literal("disabled").withStyle(ChatFormatting.RED).getString();
+
+                            context.getSource().sendSuccess(
+                                () -> Component.literal("[MobScaler] Debug logging " + status), true);
+
+                            if (enabled) {
+                                context.getSource().sendSuccess(
+                                    () -> Component.literal("[MobScaler] Warning: debug logging may cause server lag")
+                                        .withStyle(ChatFormatting.YELLOW), true);
+                            }
+
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("status")
+                        .executes(context -> {
+                            boolean enabled = MobScalerConfig.isDebugLoggingEnabled();
+                            String status = enabled
+                                ? Component.literal("enabled").withStyle(ChatFormatting.GREEN).getString()
+                                : Component.literal("disabled").withStyle(ChatFormatting.RED).getString();
+
+                            context.getSource().sendSuccess(
+                                () -> Component.literal("[MobScaler] Debug logging is currently " + status), true);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
                 )
         );
     }
@@ -67,12 +104,13 @@ public class ReloadCommand {
                 
                 for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, worldBounds)) {
                     if (!(entity instanceof Player)) {
-                        EntityHandler.handleMobModifiers(entity, 
-                            serverLevel, 
-                            serverLevel.dimension().location().toString(), 
+                        EntityHandler.handleMobModifiers(entity,
+                            serverLevel,
+                            serverLevel.dimension().location().toString(),
                             EntityHandler.isNight(serverLevel),
                             EntityHandler.getDifficultyMultiplier(serverLevel.getDifficulty(), true),
-                            EntityHandler.getDifficultyMultiplier(serverLevel.getDifficulty(), false));
+                            EntityHandler.getDifficultyMultiplier(serverLevel.getDifficulty(), false),
+                            true);
                     }
                 }
             }
@@ -83,7 +121,7 @@ public class ReloadCommand {
                 .append(Component.literal(" configuration reloaded "))
                 .append(Component.literal("successfully!").withStyle(ChatFormatting.GREEN));
                 
-            context.getSource().sendSuccess(message, true);
+                context.getSource().sendSuccess(() -> message, true);
             
         } catch (Exception e) {
             // Send error message with colored text

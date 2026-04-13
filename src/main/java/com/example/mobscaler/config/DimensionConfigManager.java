@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistry;
-import net.minecraftforge.registries.RegistryManager;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
@@ -56,8 +54,14 @@ public class DimensionConfigManager {
                  saveConfigs();
              }
          }
-         // Добавляем измерения из реестра
-         addRegistryDimensions();
+    }
+
+    /**
+     * Добавляет измерения из модов в конфиг. Вызывается при запуске сервера.
+     */
+    public static void registerModDimensions(net.minecraft.core.RegistryAccess registryAccess) {
+        addRegistryDimensions(registryAccess);
+        saveConfigs();
     }
 
     public static Map<String, DimensionConfig> getDimensionConfigs() {
@@ -98,7 +102,16 @@ public class DimensionConfigManager {
             0.0, 1.0, // armor toughness
             0.0, 1.0, // luck
             0.0, 1.0, // swim speed
-            0.0, 1.0, // reach distance
+            0.0, 1.0, // blockReach
+            0.0, 1.0, // entityReach
+            0.0, 1.0, // burningTime
+            0.0, 1.0, // explosionResistance
+                 1.0, // fallDamage
+            0.0, 1.0, // oxygenBonus
+            0.0, 1.0,  // safeFallDistance
+            0.0, 1.0, // waterMovementEfficiency
+
+
             // Ночные настройки
             2.0, 1.2, // night health
             1.0, 1.1, // night armor
@@ -112,7 +125,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // night armor toughness
             0.0, 1.0, // night luck
             0.0, 1.0, // night swim speed
-            0.0, 1.0, // night reach distance
+            0.0, 1.0, // night blockReach
+            0.0, 1.0, // night entityReach
+            0.0, 1.0, // night burningTime
+            0.0, 1.0, // night explosionResistance
+                 1.0, // night fallDamage
+            0.0, 1.0, // night oxygenBonus
+            0.0, 1.0,  // night safeFallDistance
+            0.0, 1.0, // night waterMovementEfficiency
             // Пещерные настройки
             4.0, 1.3, // cave health
             2.0, 1.2, // cave armor
@@ -126,7 +146,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // cave armor toughness
             0.0, 1.0, // cave luck
             0.0, 1.0, // cave swim speed
-            0.0, 1.0, // cave reach distance
+            0.0, 1.0, // cave blockReach
+            0.0, 1.0, // cave entityReach
+            0.0, 1.0, // cave burningTime
+            0.0, 1.0, // cave explosionResistance
+                 1.0, // cave fallDamage
+            0.0, 1.0, // cave oxygenBonus
+            0.0, 1.0, // cave safeFallDistance
+            0.0, 1.0, // cave waterMovementEfficiency
             // Черные списки
             new ArrayList<String>(), // modBlacklist
             new ArrayList<String>()  // entityBlacklist
@@ -152,7 +179,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // armor toughness
             0.0, 1.0, // luck
             0.0, 1.0, // swim speed
-            0.0, 1.0, // reach distance
+            0.0, 1.0, // blockReach
+            0.0, 1.0, // entityReach
+            0.0, 1.0, // burningTime
+            0.0, 1.0, // explosionResistance
+                 1.0, // cave fallDamage
+            0.0, 1.0, //  oxygenBonus
+            0.0, 1.0, // safeFallDistance
+            0.0, 1.0, // waterMovementEfficiency
             // Ночные настройки
             0.0, 1.0, // night health
             0.0, 1.0, // night armor
@@ -166,7 +200,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // night armor toughness
             0.0, 1.0, // night luck
             0.0, 1.0, // night swim speed
-            0.0, 1.0, // night reach distance
+            0.0, 1.0, // night blockReach
+            0.0, 1.0, // night entityReach
+            0.0, 1.0, // night burningTime
+            0.0, 1.0, // night explosionResistance
+                 1.0, // cave fallDamage
+            0.0, 1.0, // night oxygenBonus
+            0.0, 1.0, // night safeFallDistance
+            0.0, 1.0, // night waterMovementEfficiency
             // Пещерные настройки
             4.0, 1.3, // cave health
             2.0, 1.2, // cave armor
@@ -180,7 +221,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // cave armor toughness
             0.0, 1.0, // cave luck
             0.0, 1.0, // cave swim speed
-            0.0, 1.0, // cave reach distance
+            0.0, 1.0, // cave blockReach
+            0.0, 1.0, // cave entityReach
+            0.0, 1.0, // cave burningTime
+            0.0, 1.0, // cave explosionResistance
+                 1.0, // cave fallDamage
+            0.0, 1.0, // cave oxygenBonus
+            0.0, 1.0, // cave safeFallDistance
+            0.0, 1.0, // cave waterMovementEfficiency
             // Черные списки
             new ArrayList<String>(), // modBlacklist
             new ArrayList<String>()  // entityBlacklist
@@ -206,7 +254,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // armor toughness
             0.0, 1.0, // luck
             0.0, 1.0, // swim speed
-            0.0, 1.0, // reach distance
+            0.0, 1.0, // blockReach
+            0.0, 1.0, // entityReach
+            0.0, 1.0, // burningTime
+            0.0, 1.0, // explosionResistance
+                 1.0, // fallDamage
+            0.0, 1.0, // oxygenBonus
+            0.0, 1.0, // safeFallDistance
+            0.0, 1.0, // waterMovementEfficiency                                                                                                    
             // Ночные настройки
             0.0, 1.0, // night health
             0.0, 1.0, // night armor
@@ -220,7 +275,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // night armor toughness
             0.0, 1.0, // night luck
             0.0, 1.0, // night swim speed
-            0.0, 1.0, // night reach distance
+            0.0, 1.0, // night blockReach
+            0.0, 1.0, // night entityReach
+            0.0, 1.0, // night burningTime
+            0.0, 1.0, // night explosionResistance
+                 1.0, // night fallDamage
+            0.0, 1.0, // night oxygenBonus
+            0.0, 1.0, // night safeFallDistance
+            0.0, 1.0, // night waterMovementEfficiency
             // Пещерные настройки
             0.0, 1.0, // cave health
             0.0, 1.0, // cave armor
@@ -234,7 +296,14 @@ public class DimensionConfigManager {
             0.0, 1.0, // cave armor toughness
             0.0, 1.0, // cave luck
             0.0, 1.0, // cave swim speed
-            0.0, 1.0, // cave reach distance
+            0.0, 1.0, // cave blockReach
+            0.0, 1.0, // cave entityReach
+            0.0, 1.0, // cave burningTime
+            0.0, 1.0, // cave explosionResistance
+                 1.0, // cave fallDamage
+            0.0, 1.0, // cave oxygenBonus
+            0.0, 1.0, // cave safeFallDistance
+            0.0, 1.0, // cave waterMovementEfficiency
             // Черные списки
             new ArrayList<String>(), // modBlacklist
             new ArrayList<String>()  // entityBlacklist
@@ -243,10 +312,11 @@ public class DimensionConfigManager {
         return configs;
     }
 
-    private static void addRegistryDimensions() {
-        ForgeRegistry<?> dimRegistry = RegistryManager.ACTIVE.getRegistry(new ResourceLocation("minecraft:dimension_type"));
-        if (dimRegistry != null) {
-            for (ResourceLocation id : dimRegistry.getKeys()) {
+    public static void addRegistryDimensions(net.minecraft.core.RegistryAccess registryAccess) {
+        // В 1.21.1 используем RegistryAccess для получения реестра измерений
+        try {
+            var levelStemRegistry = registryAccess.registryOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM);
+            for (ResourceLocation id : levelStemRegistry.keySet()) {
                 String dimId = id.toString();
                 if (!dimensionConfigs.containsKey(dimId)) {
                     dimensionConfigs.put(dimId, new DimensionConfig(
@@ -268,7 +338,14 @@ public class DimensionConfigManager {
                         0.0, 1.0,  // armor toughness
                         0.0, 1.0,  // luck
                         0.0, 1.0,  // swim speed
-                        0.0, 1.0,  // reach distance
+                        0.0, 1.0, // blockReach
+                        0.0, 1.0, // entityReach
+                        0.0, 1.0, // burningTime
+                        0.0, 1.0, // explosionResistance
+                             1.0, // fallDamage
+                        0.0, 1.0, // oxygenBonus
+                        0.0, 1.0, // safeFallDistance
+                        0.0, 1.0, // waterMovementEfficiency
                         // Ночные настройки
                         0.0, 1.0,  // night health
                         0.0, 1.0,  // night armor
@@ -282,7 +359,14 @@ public class DimensionConfigManager {
                         0.0, 1.0,  // night armor toughness
                         0.0, 1.0,  // night luck
                         0.0, 1.0,  // night swim speed
-                        0.0, 1.0,  // night reach distance
+                        0.0, 1.0, // night blockReach
+                        0.0, 1.0, // night entityReach
+                        0.0, 1.0, // night burningTime
+                        0.0, 1.0, // night explosionResistance
+                             1.0, // night fallDamage
+                        0.0, 1.0, // night oxygenBonus
+                        0.0, 1.0, // night safeFallDistance
+                        0.0, 1.0, // night waterMovementEfficiency
                         // Пещерные настройки
                         0.0, 1.0,  // cave health
                         0.0, 1.0,  // cave armor
@@ -296,7 +380,14 @@ public class DimensionConfigManager {
                         0.0, 1.0,  // cave armor toughness
                         0.0, 1.0,  // cave luck
                         0.0, 1.0,  // cave swim speed
-                        0.0, 1.0,  // cave reach distance
+                        0.0, 1.0, // cave blockReach
+                        0.0, 1.0, // cave entityReach
+                        0.0, 1.0, // cave burningTime
+                        0.0, 1.0, // cave explosionResistance
+                             1.0, // cave fallDamage
+                        0.0, 1.0, // cave oxygenBonus
+                        0.0, 1.0, // cave safeFallDistance
+                        0.0, 1.0, // cave waterMovementEfficiency
                         // Общие черные списки
                         new ArrayList<String>(),  // modBlacklist
                         new ArrayList<String>()   // entityBlacklist
@@ -304,6 +395,8 @@ public class DimensionConfigManager {
                 }
             }
             saveConfigs();
+        } catch (Exception e) {
+            // В случае ошибки просто пропускаем
         }
     }
 }

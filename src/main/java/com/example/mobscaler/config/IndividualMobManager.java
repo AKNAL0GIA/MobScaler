@@ -1,5 +1,6 @@
 package com.example.mobscaler.config;
 
+import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -8,43 +9,49 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import com.example.mobscaler.events.EntityHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.function.Supplier;
-import java.lang.reflect.Field;
 
 public class IndividualMobManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(IndividualMobManager.class);
     private static final Map<String, IndividualMobConfig> individualMobConfigs = new HashMap<>();
     private static final Map<String, IndividualMobAttributes> modConfigs = new HashMap<>();
 
-    // UUIDs для модификаторов атрибутов
-    private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1071");
-    private static final UUID ARMOR_MODIFIER_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1072");
-    private static final UUID DAMAGE_MODIFIER_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1073");
-    private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1074");
-    private static final UUID KNOCKBACK_RESISTANCE_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1075");
-    private static final UUID ATTACK_KNOCKBACK_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1076");
-    private static final UUID ATTACK_SPEED_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1077");
-    private static final UUID FOLLOW_RANGE_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1078");
-    private static final UUID FLYING_SPEED_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1079");
-    private static final UUID SWIM_SPEED_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1080");
-    private static final UUID REACH_DISTANCE_UUID = UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1082");
+    // ResourceLocation IDs для модификаторов атрибутов (1.21.1 API)
+    private static final ResourceLocation HEALTH_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "health");
+    private static final ResourceLocation ARMOR_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "armor");
+    private static final ResourceLocation DAMAGE_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "damage");
+    private static final ResourceLocation SPEED_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "speed");
+    private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "knockback_resistance");
+    private static final ResourceLocation ATTACK_KNOCKBACK_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "attack_knockback");
+    private static final ResourceLocation ATTACK_SPEED_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "attack_speed");
+    private static final ResourceLocation FOLLOW_RANGE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "follow_range");
+    private static final ResourceLocation FLYING_SPEED_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "flying_speed");
+    private static final ResourceLocation ARMOR_TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "armor_toughness");
+    private static final ResourceLocation LUCK_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "luck");
+    private static final ResourceLocation SWIM_SPEED_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "swim_speed");
+    private static final ResourceLocation REACH_DISTANCE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "reach_distance");
+    private static final ResourceLocation ENTITY_REACH_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "entity_reach");
+    private static final ResourceLocation BURNING_TIME_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "burning_time");
+    private static final ResourceLocation EXPLOSION_KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "explosion_knockback_resistance");
+    private static final ResourceLocation FALL_DAMAGE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "fall_damage_multiplier");
+    private static final ResourceLocation OXYGEN_BONUS_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "oxygen_bonus");
+    private static final ResourceLocation SAFE_FALL_DISTANCE_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "safe_fall_distance");
+    private static final ResourceLocation WATER_MOVEMENT_EFFICIENCY_ID = ResourceLocation.fromNamespaceAndPath("mobscaler", "water_movement_efficiency");
     
     public static void applyModifiers(LivingEntity entity, double healthMultiplier, double damageMultiplier) {
         ResourceLocation entityId = EntityType.getKey(entity.getType());
         String entityIdStr = entityId.toString();
         String modId = entityId.getNamespace();
-        Level level = entity.level;
+        Level level = entity.level();
         
         
         // Проверяем наличие индивидуальных настроек
@@ -132,67 +139,36 @@ public class IndividualMobManager {
         }
 
         // Проверяем, что модификаторы были применены
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : new net.minecraft.world.entity.ai.attributes.Attribute[] {
+        @SuppressWarnings("unchecked")
+        Holder<net.minecraft.world.entity.ai.attributes.Attribute>[] attributesToCheck = new Holder[] {
             Attributes.MAX_HEALTH, Attributes.ARMOR, Attributes.ATTACK_DAMAGE,
             Attributes.MOVEMENT_SPEED, Attributes.KNOCKBACK_RESISTANCE,
             Attributes.ATTACK_KNOCKBACK, Attributes.ATTACK_SPEED,
-            Attributes.FOLLOW_RANGE, Attributes.FLYING_SPEED
-        }) {
-            AttributeInstance attr = entity.getAttribute(attribute);
-            if (attr != null) {
-                java.util.Collection<AttributeModifier> appliedModifiers = attr.getModifiers();
-                if (appliedModifiers.isEmpty()) {
-                    LOGGER.warn("No modifiers found for attribute {} after application: {}", attribute, attr.getValue());
-                } else {
-                }
-            }
-        }
-        
-        // Проверяем модификаторы для новых атрибутов ForgeMod
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Проверяем SWIM_SPEED
-            checkAttributeModifiers(entity, forgeModClass, "SWIM_SPEED");
-            
-            // Проверяем REACH_DISTANCE
-            checkAttributeModifiers(entity, forgeModClass, "REACH_DISTANCE");
-            
-        } catch (Exception e) {
-            LOGGER.error("Error checking ForgeMod attribute modifiers: {}", e.getMessage());
-        }
-    }
+            Attributes.FOLLOW_RANGE, Attributes.FLYING_SPEED,
+            Attributes.ARMOR_TOUGHNESS, Attributes.LUCK,
+            Attributes.WATER_MOVEMENT_EFFICIENCY,
+            Attributes.BLOCK_INTERACTION_RANGE,
+            Attributes.ENTITY_INTERACTION_RANGE,
+            Attributes.BURNING_TIME,
+            Attributes.FALL_DAMAGE_MULTIPLIER,
+            Attributes.EXPLOSION_KNOCKBACK_RESISTANCE,
+            Attributes.OXYGEN_BONUS,
+            Attributes.SAFE_FALL_DISTANCE,
+            net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED
+        };
 
-    // Вспомогательный метод для проверки модификаторов атрибутов ForgeMod
-    private static void checkAttributeModifiers(LivingEntity entity, Class<?> forgeModClass, String attributeName) {
-        try {
-            java.lang.reflect.Field field = forgeModClass.getDeclaredField(attributeName);
-            field.setAccessible(true);
-            Object supplier = field.get(null);
-            
-            if (supplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute attribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) supplier).get();
-                if (attribute != null) {
-                    AttributeInstance attr = entity.getAttribute(attribute);
-                    if (attr != null) {
-                        java.util.Collection<AttributeModifier> appliedModifiers = attr.getModifiers();
-                        if (appliedModifiers.isEmpty()) {
-                            LOGGER.warn("No modifiers found for ForgeMod attribute {} after application: {}", attributeName, attr.getValue());
-                        } else {
-                        }
-                    }
-                }
+        for (Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute : attributesToCheck) {
+            AttributeInstance attr = entity.getAttribute(attribute);
+            if (attr != null && attr.getModifiers().isEmpty()) {
+                LOGGER.warn("No modifiers found for attribute {} after application", attribute.value().getDescriptionId());
             }
-        } catch (Exception e) {
-            LOGGER.error("Error checking modifiers for ForgeMod attribute {}: {}", attributeName, e.getMessage());
         }
     }
 
     private static void removeAllMobscalerModifiers(LivingEntity entity) {
-        
+
         // Список всех атрибутов для проверки
-        List<net.minecraft.world.entity.ai.attributes.Attribute> attributesList = new ArrayList<>(Arrays.asList(
+        List<Holder<net.minecraft.world.entity.ai.attributes.Attribute>> attributesList = new ArrayList<>(Arrays.asList(
             Attributes.MAX_HEALTH,
             Attributes.ARMOR,
             Attributes.ATTACK_DAMAGE,
@@ -201,96 +177,92 @@ public class IndividualMobManager {
             Attributes.ATTACK_KNOCKBACK,
             Attributes.ATTACK_SPEED,
             Attributes.FOLLOW_RANGE,
-            Attributes.FLYING_SPEED
+            Attributes.FLYING_SPEED,
+            Attributes.ARMOR_TOUGHNESS,
+            Attributes.LUCK,
+            Attributes.JUMP_STRENGTH,
+            Attributes.WATER_MOVEMENT_EFFICIENCY,
+            Attributes.BLOCK_INTERACTION_RANGE,
+            Attributes.ENTITY_INTERACTION_RANGE,
+            Attributes.BURNING_TIME,
+            Attributes.FALL_DAMAGE_MULTIPLIER,
+            Attributes.EXPLOSION_KNOCKBACK_RESISTANCE,
+            Attributes.OXYGEN_BONUS,
+            Attributes.SAFE_FALL_DISTANCE,
+            Attributes.BLOCK_BREAK_SPEED,
+            Attributes.MINING_EFFICIENCY,
+            Attributes.STEP_HEIGHT,
+            Attributes.SUBMERGED_MINING_SPEED,
+            Attributes.SNEAKING_SPEED,
+            Attributes.MOVEMENT_EFFICIENCY,
+            Attributes.GRAVITY
         ));
-        
-        // Добавляем атрибуты из ForgeMod через рефлексию
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Получаем SWIM_SPEED
-            Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            if (swimSpeedField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = swimSpeedField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute swimAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(swimAttribute);
-                }
-            }
-            
-            // Получаем REACH_DISTANCE
-            Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            if (reachDistanceField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = reachDistanceField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute reachAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(reachAttribute);
-                }
-            }
-            
-        } catch (Exception e) {
-            LOGGER.error("Error getting Forge attributes for remove modifiers: " + e.getMessage());
-        }
-        
-        net.minecraft.world.entity.ai.attributes.Attribute[] attributes = 
-            attributesList.toArray(new net.minecraft.world.entity.ai.attributes.Attribute[0]);
 
-        // Список всех UUID модификаторов нашего мода
-        UUID[] modifierUuids = {
-            HEALTH_MODIFIER_UUID,
-            ARMOR_MODIFIER_UUID,
-            DAMAGE_MODIFIER_UUID,
-            SPEED_MODIFIER_UUID,
-            KNOCKBACK_RESISTANCE_UUID,
-            ATTACK_KNOCKBACK_UUID,
-            ATTACK_SPEED_UUID,
-            FOLLOW_RANGE_UUID,
-            FLYING_SPEED_UUID,
-            SWIM_SPEED_UUID,
-            REACH_DISTANCE_UUID
+        // Добавляем NeoForge атрибуты напрямую
+        attributesList.add(net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED);
+        attributesList.add(net.neoforged.neoforge.common.NeoForgeMod.NAMETAG_DISTANCE);
+
+        // Список всех ResourceLocation ID модификаторов нашего мода
+        ResourceLocation[] modifierIds = {
+            HEALTH_MODIFIER_ID,
+            ARMOR_MODIFIER_ID,
+            DAMAGE_MODIFIER_ID,
+            SPEED_MODIFIER_ID,
+            KNOCKBACK_RESISTANCE_ID,
+            ATTACK_KNOCKBACK_ID,
+            ATTACK_SPEED_ID,
+            FOLLOW_RANGE_ID,
+            FLYING_SPEED_ID,
+            SWIM_SPEED_ID,
+            REACH_DISTANCE_ID,
+            ENTITY_REACH_ID,
+            BURNING_TIME_ID,
+            EXPLOSION_KNOCKBACK_RESISTANCE_ID,
+            FALL_DAMAGE_ID,
+            OXYGEN_BONUS_ID,
+            SAFE_FALL_DISTANCE_ID,
+            WATER_MOVEMENT_EFFICIENCY_ID
         };
 
-        // Удаляем все модификаторы по UUID и имени
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributes) {
+        // Удаляем все модификаторы по ID
+        for (Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute : attributesList) {
             AttributeInstance attr = entity.getAttribute(attribute);
             if (attr != null) {
-                // Удаляем модификаторы по UUID
-                for (UUID uuid : modifierUuids) {
-                    AttributeModifier modifier = attr.getModifier(uuid);
+                // Удаляем модификаторы по ResourceLocation ID
+                for (ResourceLocation id : modifierIds) {
+                    AttributeModifier modifier = attr.getModifier(id);
                     if (modifier != null) {
-                        attr.removeModifier(uuid);
+                        attr.removeModifier(id);
                     }
                 }
-                
-                // Удаляем модификаторы по имени - ИСПРАВЛЕНИЕ: собираем ID и затем удаляем
+
+                // Удаляем модификаторы по имени - собираем ID и затем удаляем
                 java.util.Collection<AttributeModifier> modifiers = attr.getModifiers();
-                java.util.List<UUID> toRemove = new java.util.ArrayList<>();
-                
-                // Сначала собираем UUID всех модификаторов с именем, начинающимся с "mobscaler_"
+                java.util.List<ResourceLocation> toRemove = new java.util.ArrayList<>();
+
+                // Сначала собираем ID всех модификаторов с именем, начинающимся с "mobscaler_"
                 for (AttributeModifier modifier : modifiers) {
-                    if (modifier.getName().startsWith("mobscaler_")) {
-                        toRemove.add(modifier.getId());
+                    if (modifier.id().toString().startsWith("mobscaler_")) {
+                        toRemove.add(modifier.id());
                     }
                 }
-                
-                // Теперь удаляем модификаторы по собранным UUID
-                for (UUID id : toRemove) {
+
+                // Теперь удаляем модификаторы по собранным ID
+                for (ResourceLocation id : toRemove) {
                     attr.removeModifier(id);
                 }
-                
+
                 // Проверяем, что все модификаторы удалены
                 java.util.Collection<AttributeModifier> remainingModifiers = attr.getModifiers();
                 boolean stillHasMobscalerModifiers = false;
                 for (AttributeModifier modifier : remainingModifiers) {
-                    if (modifier.getName().startsWith("mobscaler_")) {
+                    if (modifier.id().toString().startsWith("mobscaler_")) {
                         stillHasMobscalerModifiers = true;
-                        LOGGER.warn("Failed to remove mobscaler modifier: {} (ID: {}) from attribute: {}", 
-                            modifier.getName(), modifier.getId(), attribute);
+                        LOGGER.warn("Failed to remove mobscaler modifier: {} (ID: {}) from attribute: {}",
+                            modifier.id(), modifier.id(), attribute);
                     }
                 }
-                
+
                 if (stillHasMobscalerModifiers) {
                     LOGGER.warn("Some mobscaler modifiers remain on attribute {} after removal attempt", attribute);
                 } else if (!remainingModifiers.isEmpty()) {
@@ -317,8 +289,17 @@ public class IndividualMobManager {
         applyAttackSpeedModifier(entity, attributes.getCaveAttackSpeedAddition(), attributes.getCaveAttackSpeedMultiplier(), 1.0);
         applyFollowRangeModifier(entity, attributes.getCaveFollowRangeAddition(), attributes.getCaveFollowRangeMultiplier(), 1.0);
         applyFlyingSpeedModifier(entity, attributes.getCaveFlyingSpeedAddition(), attributes.getCaveFlyingSpeedMultiplier(), 1.0);
+        applyArmorToughnessModifier(entity, attributes.getCaveArmorToughnessAddition(), attributes.getCaveArmorToughnessMultiplier(), 1.0);
+        applyLuckModifier(entity, attributes.getCaveLuckAddition(), attributes.getCaveLuckMultiplier(), 1.0);
         applySwimSpeedModifier(entity, attributes.getCaveSwimSpeedAddition(), attributes.getCaveSwimSpeedMultiplier(), 1.0);
-        applyReachDistanceModifier(entity, attributes.getCaveReachDistanceAddition(), attributes.getCaveReachDistanceMultiplier(), 1.0);
+        applyBlockReachModifier(entity, attributes.getCaveBlockReachAddition(), attributes.getCaveBlockReachMultiplier(), 1.0);
+        applyEntityReachModifier(entity, attributes.getCaveEntityReachAddition(), attributes.getCaveEntityReachMultiplier(), 1.0);
+        applyBurningTimeModifier(entity, attributes.getCaveBurningTimeAddition(), attributes.getCaveBurningTimeMultiplier(), 1.0);
+        applyExplosionKnockbackResistanceModifier(entity, attributes.getCaveExplosionKnockbackResistanceAddition(), attributes.getCaveExplosionKnockbackResistanceMultiplier(), 1.0);
+        applyFallDamageModifier(entity, attributes.getCaveFallDamageMultiplier(), 1.0);
+        applyOxygenBonusModifier(entity, attributes.getCaveOxygenBonusAddition(), attributes.getCaveOxygenBonusMultiplier(), 1.0);
+        applySafeFallDistanceModifier(entity, attributes.getCaveSafeFallDistanceAddition(), attributes.getCaveSafeFallDistanceMultiplier(), 1.0);
+        applyWaterMovementEfficiencyModifier(entity, attributes.getCaveWaterMovementEfficiencyAddition(), attributes.getCaveWaterMovementEfficiencyMultiplier(), 1.0);
     }
 
     private static void applyNightModifiers(LivingEntity entity, IndividualMobAttributes attributes, double healthMultiplier, double damageMultiplier) {
@@ -331,8 +312,17 @@ public class IndividualMobManager {
         applyAttackSpeedModifier(entity, attributes.getNightAttackSpeedAddition(), attributes.getNightAttackSpeedMultiplier(), 1.0);
         applyFollowRangeModifier(entity, attributes.getNightFollowRangeAddition(), attributes.getNightFollowRangeMultiplier(), 1.0);
         applyFlyingSpeedModifier(entity, attributes.getNightFlyingSpeedAddition(), attributes.getNightFlyingSpeedMultiplier(), 1.0);
+        applyArmorToughnessModifier(entity, attributes.getNightArmorToughnessAddition(), attributes.getNightArmorToughnessMultiplier(), 1.0);
+        applyLuckModifier(entity, attributes.getNightLuckAddition(), attributes.getNightLuckMultiplier(), 1.0);
         applySwimSpeedModifier(entity, attributes.getNightSwimSpeedAddition(), attributes.getNightSwimSpeedMultiplier(), 1.0);
-        applyReachDistanceModifier(entity, attributes.getNightReachDistanceAddition(), attributes.getNightReachDistanceMultiplier(), 1.0);
+        applyBlockReachModifier(entity, attributes.getNightBlockReachAddition(), attributes.getNightBlockReachMultiplier(), 1.0);
+        applyEntityReachModifier(entity, attributes.getNightEntityReachAddition(), attributes.getNightEntityReachMultiplier(), 1.0);
+        applyBurningTimeModifier(entity, attributes.getNightBurningTimeAddition(), attributes.getNightBurningTimeMultiplier(), 1.0);
+        applyExplosionKnockbackResistanceModifier(entity, attributes.getNightExplosionKnockbackResistanceAddition(), attributes.getNightExplosionKnockbackResistanceMultiplier(), 1.0);
+        applyFallDamageModifier(entity, attributes.getNightFallDamageMultiplier(), 1.0);
+        applyOxygenBonusModifier(entity, attributes.getNightOxygenBonusAddition(), attributes.getNightOxygenBonusMultiplier(), 1.0);
+        applySafeFallDistanceModifier(entity, attributes.getNightSafeFallDistanceAddition(), attributes.getNightSafeFallDistanceMultiplier(), 1.0);
+        applyWaterMovementEfficiencyModifier(entity, attributes.getNightWaterMovementEfficiencyAddition(), attributes.getNightWaterMovementEfficiencyMultiplier(), 1.0);
     }
 
     private static void applyDefaultModifiers(LivingEntity entity, IndividualMobAttributes attributes, double healthMultiplier, double damageMultiplier) {
@@ -345,8 +335,17 @@ public class IndividualMobManager {
         applyAttackSpeedModifier(entity, attributes.getAttackSpeedAddition(), attributes.getAttackSpeedMultiplier(), 1.0);
         applyFollowRangeModifier(entity, attributes.getFollowRangeAddition(), attributes.getFollowRangeMultiplier(), 1.0);
         applyFlyingSpeedModifier(entity, attributes.getFlyingSpeedAddition(), attributes.getFlyingSpeedMultiplier(), 1.0);
+        applyArmorToughnessModifier(entity, attributes.getArmorToughnessAddition(), attributes.getArmorToughnessMultiplier(), 1.0);
+        applyLuckModifier(entity, attributes.getLuckAddition(), attributes.getLuckMultiplier(), 1.0);
         applySwimSpeedModifier(entity, attributes.getSwimSpeedAddition(), attributes.getSwimSpeedMultiplier(), 1.0);
-        applyReachDistanceModifier(entity, attributes.getReachDistanceAddition(), attributes.getReachDistanceMultiplier(), 1.0);
+        applyBlockReachModifier(entity, attributes.getBlockReachAddition(), attributes.getBlockReachMultiplier(), 1.0);
+        applyEntityReachModifier(entity, attributes.getEntityReachAddition(), attributes.getEntityReachMultiplier(), 1.0);
+        applyBurningTimeModifier(entity, attributes.getBurningTimeAddition(), attributes.getBurningTimeMultiplier(), 1.0);
+        applyExplosionKnockbackResistanceModifier(entity, attributes.getExplosionKnockbackResistanceAddition(), attributes.getExplosionKnockbackResistanceMultiplier(), 1.0);
+        applyFallDamageModifier(entity, attributes.getFallDamageMultiplier(), 1.0);
+        applyOxygenBonusModifier(entity, attributes.getOxygenBonusAddition(), attributes.getOxygenBonusMultiplier(), 1.0);
+        applySafeFallDistanceModifier(entity, attributes.getSafeFallDistanceAddition(), attributes.getSafeFallDistanceMultiplier(), 1.0);
+        applyWaterMovementEfficiencyModifier(entity, attributes.getWaterMovementEfficiencyAddition(), attributes.getWaterMovementEfficiencyMultiplier(), 1.0);
     }
 
     private static void applyHealthModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
@@ -355,12 +354,12 @@ public class IndividualMobManager {
             double base = attr.getBaseValue();
             // Используем общую формулу: (base + addition) * multiplier * difficultyMultiplier
             double newMax = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(HEALTH_MODIFIER_UUID) != null) {
-                attr.removeModifier(HEALTH_MODIFIER_UUID);
+
+
+            if (attr.getModifier(HEALTH_MODIFIER_ID) != null) {
+                attr.removeModifier(HEALTH_MODIFIER_ID);
             }
-            attr.addPermanentModifier(createModifier(HEALTH_MODIFIER_UUID, "health", newMax - base));
+            attr.addPermanentModifier(createModifier(HEALTH_MODIFIER_ID, "health", newMax - base));
             entity.setHealth(Math.min((float)newMax, entity.getMaxHealth()));
         }
     }
@@ -370,12 +369,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(ARMOR_MODIFIER_UUID) != null) {
-                attr.removeModifier(ARMOR_MODIFIER_UUID);
+
+
+            if (attr.getModifier(ARMOR_MODIFIER_ID) != null) {
+                attr.removeModifier(ARMOR_MODIFIER_ID);
             }
-            attr.addPermanentModifier(createModifier(ARMOR_MODIFIER_UUID, "armor", newValue - base));
+            attr.addPermanentModifier(createModifier(ARMOR_MODIFIER_ID, "armor", newValue - base));
         }
     }
 
@@ -384,12 +383,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(DAMAGE_MODIFIER_UUID) != null) {
-                attr.removeModifier(DAMAGE_MODIFIER_UUID);
+
+
+            if (attr.getModifier(DAMAGE_MODIFIER_ID) != null) {
+                attr.removeModifier(DAMAGE_MODIFIER_ID);
             }
-            attr.addPermanentModifier(createModifier(DAMAGE_MODIFIER_UUID, "damage", newValue - base));
+            attr.addPermanentModifier(createModifier(DAMAGE_MODIFIER_ID, "damage", newValue - base));
         }
     }
 
@@ -398,12 +397,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(SPEED_MODIFIER_UUID) != null) {
-                attr.removeModifier(SPEED_MODIFIER_UUID);
+
+
+            if (attr.getModifier(SPEED_MODIFIER_ID) != null) {
+                attr.removeModifier(SPEED_MODIFIER_ID);
             }
-            attr.addPermanentModifier(createModifier(SPEED_MODIFIER_UUID, "speed", newValue - base));
+            attr.addPermanentModifier(createModifier(SPEED_MODIFIER_ID, "speed", newValue - base));
         }
     }
 
@@ -412,12 +411,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(KNOCKBACK_RESISTANCE_UUID) != null) {
-                attr.removeModifier(KNOCKBACK_RESISTANCE_UUID);
+
+
+            if (attr.getModifier(KNOCKBACK_RESISTANCE_ID) != null) {
+                attr.removeModifier(KNOCKBACK_RESISTANCE_ID);
             }
-            attr.addPermanentModifier(createModifier(KNOCKBACK_RESISTANCE_UUID, "knockback_resistance", newValue - base));
+            attr.addPermanentModifier(createModifier(KNOCKBACK_RESISTANCE_ID, "knockback_resistance", newValue - base));
         }
     }
 
@@ -426,12 +425,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(ATTACK_KNOCKBACK_UUID) != null) {
-                attr.removeModifier(ATTACK_KNOCKBACK_UUID);
+
+
+            if (attr.getModifier(ATTACK_KNOCKBACK_ID) != null) {
+                attr.removeModifier(ATTACK_KNOCKBACK_ID);
             }
-            attr.addPermanentModifier(createModifier(ATTACK_KNOCKBACK_UUID, "attack_knockback", newValue - base));
+            attr.addPermanentModifier(createModifier(ATTACK_KNOCKBACK_ID, "attack_knockback", newValue - base));
         }
     }
 
@@ -440,12 +439,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(ATTACK_SPEED_UUID) != null) {
-                attr.removeModifier(ATTACK_SPEED_UUID);
+
+
+            if (attr.getModifier(ATTACK_SPEED_ID) != null) {
+                attr.removeModifier(ATTACK_SPEED_ID);
             }
-            attr.addPermanentModifier(createModifier(ATTACK_SPEED_UUID, "attack_speed", newValue - base));
+            attr.addPermanentModifier(createModifier(ATTACK_SPEED_ID, "attack_speed", newValue - base));
         }
     }
 
@@ -454,12 +453,12 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(FOLLOW_RANGE_UUID) != null) {
-                attr.removeModifier(FOLLOW_RANGE_UUID);
+
+
+            if (attr.getModifier(FOLLOW_RANGE_ID) != null) {
+                attr.removeModifier(FOLLOW_RANGE_ID);
             }
-            attr.addPermanentModifier(createModifier(FOLLOW_RANGE_UUID, "follow_range", newValue - base));
+            attr.addPermanentModifier(createModifier(FOLLOW_RANGE_ID, "follow_range", newValue - base));
         }
     }
 
@@ -468,22 +467,153 @@ public class IndividualMobManager {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(FLYING_SPEED_UUID) != null) {
-                attr.removeModifier(FLYING_SPEED_UUID);
+
+
+            if (attr.getModifier(FLYING_SPEED_ID) != null) {
+                attr.removeModifier(FLYING_SPEED_ID);
             }
-            attr.addPermanentModifier(createModifier(FLYING_SPEED_UUID, "flying_speed", newValue - base));
+            attr.addPermanentModifier(createModifier(FLYING_SPEED_ID, "flying_speed", newValue - base));
         }
     }
 
-    private static AttributeModifier createModifier(UUID uuid, String name, double value) {
-        // Всегда используем ADDITION, так как мы уже применили множитель в формуле
+    private static void applyBlockReachModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+
+            if (attr.getModifier(REACH_DISTANCE_ID) != null) {
+                attr.removeModifier(REACH_DISTANCE_ID);
+            }
+            attr.addPermanentModifier(createModifier(REACH_DISTANCE_ID, "block_reach", newValue - base));
+        }
+    }
+
+    private static void applyEntityReachModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.ENTITY_INTERACTION_RANGE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+
+            if (attr.getModifier(ENTITY_REACH_ID) != null) {
+                attr.removeModifier(ENTITY_REACH_ID);
+            }
+            attr.addPermanentModifier(createModifier(ENTITY_REACH_ID, "entity_reach", newValue - base));
+        }
+    }
+
+    private static void applyBurningTimeModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.BURNING_TIME);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(BURNING_TIME_ID) != null) {
+                attr.removeModifier(BURNING_TIME_ID);
+            }
+            attr.addPermanentModifier(createModifier(BURNING_TIME_ID, "burning_time", newValue - base));
+        }
+    }
+
+    private static void applyExplosionKnockbackResistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(EXPLOSION_KNOCKBACK_RESISTANCE_ID) != null) {
+                attr.removeModifier(EXPLOSION_KNOCKBACK_RESISTANCE_ID);
+            }
+            attr.addPermanentModifier(createModifier(EXPLOSION_KNOCKBACK_RESISTANCE_ID, "explosion_knockback_resistance", newValue - base));
+        }
+    } 
+
+    private static void applyFallDamageModifier(LivingEntity entity, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.FALL_DAMAGE_MULTIPLIER);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = base * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(FALL_DAMAGE_ID) != null) {
+                attr.removeModifier(FALL_DAMAGE_ID);
+            }
+            attr.addPermanentModifier(createModifier(FALL_DAMAGE_ID, "fall_damage_multiplier", newValue - base));
+        }
+    }
+    
+    private static void applyOxygenBonusModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.OXYGEN_BONUS);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(OXYGEN_BONUS_ID) != null) {
+                attr.removeModifier(OXYGEN_BONUS_ID);
+            }
+            attr.addPermanentModifier(createModifier(OXYGEN_BONUS_ID, "oxygen_bonus", newValue - base));
+        }
+    }
+
+    private  static void applySafeFallDistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.SAFE_FALL_DISTANCE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(SAFE_FALL_DISTANCE_ID) != null) {
+                attr.removeModifier(SAFE_FALL_DISTANCE_ID);
+            }
+            attr.addPermanentModifier(createModifier(SAFE_FALL_DISTANCE_ID, "safe_fall_distance", newValue - base));
+        }
+    }
+
+    private static void applyWaterMovementEfficiencyModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.WATER_MOVEMENT_EFFICIENCY);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(WATER_MOVEMENT_EFFICIENCY_ID) != null) {
+                attr.removeModifier(WATER_MOVEMENT_EFFICIENCY_ID);
+            }
+            attr.addPermanentModifier(createModifier(WATER_MOVEMENT_EFFICIENCY_ID, "water_movement_efficiency", newValue - base));
+        }
+    }
+
+    private  static void applyLuckModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.LUCK);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(LUCK_ID) != null) {
+                attr.removeModifier(LUCK_ID);
+            }
+            attr.addPermanentModifier(createModifier(LUCK_ID, "luck", newValue - base));
+        }
+    }
+
+    private static void applyArmorToughnessModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.ARMOR_TOUGHNESS);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+            if (attr.getModifier(ARMOR_TOUGHNESS_ID) != null) {
+                attr.removeModifier(ARMOR_TOUGHNESS_ID);
+            }
+            attr.addPermanentModifier(createModifier(ARMOR_TOUGHNESS_ID, "armor_toughness", newValue - base));
+        }
+    }
+
+    private static AttributeModifier createModifier(ResourceLocation id, String name, double value) {
+        // Always use ADD_VALUE, as we already applied the multiplier in the formula
         return new AttributeModifier(
-            uuid,
-            "mobscaler_" + name,
+            id,
             value,
-            AttributeModifier.Operation.ADDITION
+            AttributeModifier.Operation.ADD_VALUE
         );
     }
 
@@ -543,7 +673,7 @@ public class IndividualMobManager {
 
     // Проверяем, есть ли у сущности модификаторы от нашего мода
     private static boolean hasModifierFromMod(LivingEntity entity) {
-        List<net.minecraft.world.entity.ai.attributes.Attribute> attributesList = new ArrayList<>(Arrays.asList(
+        List<Holder<net.minecraft.world.entity.ai.attributes.Attribute>> attributesList = new ArrayList<>(Arrays.asList(
             Attributes.MAX_HEALTH,
             Attributes.ARMOR,
             Attributes.ATTACK_DAMAGE,
@@ -554,42 +684,15 @@ public class IndividualMobManager {
             Attributes.FOLLOW_RANGE,
             Attributes.FLYING_SPEED
         ));
-        
-        // Добавляем атрибуты из ForgeMod через рефлексию
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Получаем SWIM_SPEED
-            Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            if (swimSpeedField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = swimSpeedField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute swimAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(swimAttribute);
-                }
-            }
-            
-            // Получаем REACH_DISTANCE
-            Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            if (reachDistanceField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = reachDistanceField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute reachAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(reachAttribute);
-                }
-            }
-            
-        } catch (Exception e) {
-            LOGGER.error("Error getting Forge attributes for checking modifiers: " + e.getMessage());
-        }
 
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesList) {
+        // Добавляем NeoForge атрибуты
+        attributesList.add(net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED);
+
+        for (Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute : attributesList) {
             AttributeInstance attr = entity.getAttribute(attribute);
             if (attr != null) {
                 for (AttributeModifier modifier : attr.getModifiers()) {
-                    if (modifier.getName().startsWith("mobscaler_")) {
+                    if (modifier.id().toString().startsWith("mobscaler_")) {
                         return true;
                     }
                 }
@@ -627,7 +730,7 @@ public class IndividualMobManager {
         if (parts.length == 2) {
             String namespace = parts[0];
             String path = parts[1];
-            ResourceLocation entityType = new ResourceLocation(namespace, path);
+            ResourceLocation entityType = ResourceLocation.fromNamespaceAndPath(namespace, path);
             
             // Получаем все сущности в мире
             try {
@@ -786,7 +889,7 @@ public class IndividualMobManager {
 
     // Логирует все модификаторы атрибутов сущности для диагностики
     private static void logAllModifiers(LivingEntity entity) {
-        List<net.minecraft.world.entity.ai.attributes.Attribute> attributesList = new ArrayList<>(Arrays.asList(
+        List<Holder<net.minecraft.world.entity.ai.attributes.Attribute>> attributesList = new ArrayList<>(Arrays.asList(
             Attributes.MAX_HEALTH,
             Attributes.ARMOR,
             Attributes.ATTACK_DAMAGE,
@@ -797,45 +900,18 @@ public class IndividualMobManager {
             Attributes.FOLLOW_RANGE,
             Attributes.FLYING_SPEED
         ));
-        
-        // Добавляем атрибуты из ForgeMod через рефлексию
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Получаем SWIM_SPEED
-            Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            if (swimSpeedField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = swimSpeedField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute swimAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(swimAttribute);
-                }
-            }
-            
-            // Получаем REACH_DISTANCE
-            Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            if (reachDistanceField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = reachDistanceField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute reachAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(reachAttribute);
-                }
-            }
-            
-        } catch (Exception e) {
-            LOGGER.error("Error getting Forge attributes for logging: " + e.getMessage());
-        }
-        
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesList) {
+
+        // Добавляем NeoForge атрибуты
+        attributesList.add(net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED);
+
+        for (Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute : attributesList) {
             AttributeInstance attr = entity.getAttribute(attribute);
             if (attr != null) {
                 java.util.Collection<AttributeModifier> modifiers = attr.getModifiers();
                 if (!modifiers.isEmpty()) {
                     for (AttributeModifier modifier : modifiers) {
-                        LOGGER.debug("  Modifier: Name={}, ID={}, Value={}, Operation={}", 
-                            modifier.getName(), modifier.getId(), modifier.getAmount(), modifier.getOperation());
+                        LOGGER.debug("  Modifier: ID={}, Value={}, Operation={}",
+                            modifier.id(), modifier.amount(), modifier.operation());
                     }
                 }
             }
@@ -844,8 +920,8 @@ public class IndividualMobManager {
     
     // Агрессивное удаление всех модификаторов - используется при отказе стандартного метода
     private static void removeAllMobscalerModifiersAggressively(LivingEntity entity) {
-        
-        List<net.minecraft.world.entity.ai.attributes.Attribute> attributesList = new ArrayList<>(Arrays.asList(
+
+        List<Holder<net.minecraft.world.entity.ai.attributes.Attribute>> attributesList = new ArrayList<>(Arrays.asList(
             Attributes.MAX_HEALTH,
             Attributes.ARMOR,
             Attributes.ATTACK_DAMAGE,
@@ -856,62 +932,35 @@ public class IndividualMobManager {
             Attributes.FOLLOW_RANGE,
             Attributes.FLYING_SPEED
         ));
-        
-        // Добавляем атрибуты из ForgeMod через рефлексию
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Получаем SWIM_SPEED
-            Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            if (swimSpeedField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = swimSpeedField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute swimAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(swimAttribute);
-                }
-            }
-            
-            // Получаем REACH_DISTANCE
-            Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            if (reachDistanceField.getType().isAssignableFrom(Supplier.class)) {
-                Object supplier = reachDistanceField.get(null);
-                if (supplier instanceof Supplier) {
-                    net.minecraft.world.entity.ai.attributes.Attribute reachAttribute = 
-                        (net.minecraft.world.entity.ai.attributes.Attribute) ((Supplier<?>) supplier).get();
-                    attributesList.add(reachAttribute);
-                }
-            }
 
-        } catch (Exception e) {
-            LOGGER.error("Error getting Forge attributes for aggressive remove: " + e.getMessage());
-        }
-        
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesList) {
+        // Добавляем NeoForge атрибуты
+        attributesList.add(net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED);
+
+        for (Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute : attributesList) {
             AttributeInstance attr = entity.getAttribute(attribute);
             if (attr != null) {
                 // Получаем все модификаторы
                 java.util.Collection<AttributeModifier> allModifiers = new java.util.ArrayList<>(attr.getModifiers());
-                
+
                 // Удаляем каждый модификатор
                 for (AttributeModifier modifier : allModifiers) {
-                    // Если это модификатор нашего мода или у нас есть подозрение на то,
-                    // что это наш модификатор, удаляем его
-                    if (modifier.getName().startsWith("mobscaler_") || 
-                        modifier.getId().equals(HEALTH_MODIFIER_UUID) ||
-                        modifier.getId().equals(ARMOR_MODIFIER_UUID) ||
-                        modifier.getId().equals(DAMAGE_MODIFIER_UUID) ||
-                        modifier.getId().equals(SPEED_MODIFIER_UUID) ||
-                        modifier.getId().equals(KNOCKBACK_RESISTANCE_UUID) ||
-                        modifier.getId().equals(ATTACK_KNOCKBACK_UUID) ||
-                        modifier.getId().equals(ATTACK_SPEED_UUID) ||
-                        modifier.getId().equals(FOLLOW_RANGE_UUID) ||
-                        modifier.getId().equals(FLYING_SPEED_UUID) ||
-                        modifier.getId().equals(SWIM_SPEED_UUID) ||
-                        modifier.getId().equals(REACH_DISTANCE_UUID)) {
-                        
-                        attr.removeModifier(modifier.getId());
-                    
+                    // Если это модификатор нашего мода, удаляем его
+                    if (modifier.id().toString().startsWith("mobscaler_") ||
+                        modifier.id().equals(HEALTH_MODIFIER_ID) ||
+                        modifier.id().equals(ARMOR_MODIFIER_ID) ||
+                        modifier.id().equals(DAMAGE_MODIFIER_ID) ||
+                        modifier.id().equals(SPEED_MODIFIER_ID) ||
+                        modifier.id().equals(KNOCKBACK_RESISTANCE_ID) ||
+                        modifier.id().equals(ATTACK_KNOCKBACK_ID) ||
+                        modifier.id().equals(ATTACK_SPEED_ID) ||
+                        modifier.id().equals(FOLLOW_RANGE_ID) ||
+                        modifier.id().equals(FLYING_SPEED_ID) ||
+                        modifier.id().equals(SWIM_SPEED_ID) ||
+                        modifier.id().equals(REACH_DISTANCE_ID) ||
+                        modifier.id().equals(ENTITY_REACH_ID)) {
+
+                        attr.removeModifier(modifier.id());
+
                     }
                 }
             }
@@ -990,59 +1039,20 @@ public class IndividualMobManager {
     // Добавляем новые методы для новых атрибутов
     private static void applySwimSpeedModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            swimSpeedField.setAccessible(true);
-            Object swimSpeedSupplier = swimSpeedField.get(null);
-            
-            if (swimSpeedSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute swimSpeedAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) swimSpeedSupplier).get();
-                if (swimSpeedAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(swimSpeedAttribute);
-                    if (attr != null) {
-                        double base = attr.getBaseValue();
-                        double newValue = (base + addition) * multiplier * difficultyMultiplier;
-                        
-                        
-                        if (attr.getModifier(SWIM_SPEED_UUID) != null) {
-                            attr.removeModifier(SWIM_SPEED_UUID);
-                        }
-                        attr.addPermanentModifier(createModifier(SWIM_SPEED_UUID, "swim_speed", newValue - base));
-                    }
+            AttributeInstance attr = entity.getAttribute(net.neoforged.neoforge.common.NeoForgeMod.SWIM_SPEED);
+            if (attr != null) {
+                double base = attr.getBaseValue();
+                double newValue = (base + addition) * multiplier * difficultyMultiplier;
+
+
+                if (attr.getModifier(SWIM_SPEED_ID) != null) {
+                    attr.removeModifier(SWIM_SPEED_ID);
                 }
+                attr.addPermanentModifier(createModifier(SWIM_SPEED_ID, "swim_speed", newValue - base));
             }
         } catch (Exception e) {
             LOGGER.error("Error applying swim speed modifier", e);
         }
     }
-    
-    private static void applyReachDistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            reachDistanceField.setAccessible(true);
-            Object reachDistanceSupplier = reachDistanceField.get(null);
-            
-            if (reachDistanceSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute reachDistanceAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) reachDistanceSupplier).get();
-                if (reachDistanceAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(reachDistanceAttribute);
-                    if (attr != null) {
-                        double base = attr.getBaseValue();
-                        double newValue = (base + addition) * multiplier * difficultyMultiplier;
-                        
-                        
-                        if (attr.getModifier(REACH_DISTANCE_UUID) != null) {
-                            attr.removeModifier(REACH_DISTANCE_UUID);
-                        }
-                        attr.addPermanentModifier(createModifier(REACH_DISTANCE_UUID, "reach_distance", newValue - base));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error applying reach distance modifier", e);
-        }
-    }
+
 } 

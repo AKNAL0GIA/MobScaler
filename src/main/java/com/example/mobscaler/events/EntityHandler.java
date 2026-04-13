@@ -10,6 +10,7 @@ import com.example.mobscaler.config.IndividualMobManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -17,43 +18,163 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraft.core.Holder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class EntityHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityHandler.class);
-    private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("a9c8745e-1234-5678-90ab-cdef12345678");
-    private static final UUID ARMOR_MODIFIER_UUID = UUID.fromString("b8d7654f-4321-5678-90ab-cdef654321ba");
-    private static final UUID DAMAGE_MODIFIER_UUID = UUID.fromString("c3d9f8a1-2468-1357-9abc-def456789012");
-    private static final UUID SPEED_MODIFIER_UUID = UUID.fromString("d2e4f6a8-3579-2468-90ab-cdef13579024");
-    private static final UUID KNOCKBACK_RESISTANCE_UUID = UUID.fromString("e1f3d5b7-9753-1357-90ab-cdef24680135");
-    private static final UUID ATTACK_KNOCKBACK_UUID = UUID.fromString("f0e2d4c6-8642-0246-90ab-cdef35791246");
-    private static final UUID ATTACK_SPEED_UUID = UUID.fromString("a1b3c5d7-7531-9753-90ab-cdef46802357");
-    private static final UUID FOLLOW_RANGE_UUID = UUID.fromString("b2c4d6e8-6420-8642-90ab-cdef57913468");
-    private static final UUID FLYING_SPEED_UUID = UUID.fromString("c3d5e7f9-5319-7531-90ab-cdef68024579");
-    private static final UUID ARMOR_TOUGHNESS_UUID = UUID.fromString("d4e6f8a0-4208-6420-90ab-cdef79135680");
-    private static final UUID LUCK_UUID = UUID.fromString("e5f7a0b2-3197-5319-90ab-cdef80246791");
-    private static final UUID GRAVITY_UUID = UUID.fromString("f1f2f3f4-5678-90ab-cdef-1234567890ab");
-    private static final UUID SWIM_SPEED_UUID = UUID.fromString("a2b4c6d8-7531-9753-90ab-cdef91357802");
-    private static final UUID REACH_DISTANCE_UUID = UUID.fromString("c4d6e8f0-5319-7531-90ab-cdef13579024");
+    private static final String MOD_ID = "mobscaler";
+
+    // ============================================================
+    // ResourceLocation для модификаторов EntityHandler (стандартные)
+    // В 1.21.1 UUID заменены на ResourceLocation
+    // ============================================================
+    private static final ResourceLocation HEALTH_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "health");
+    private static final ResourceLocation ARMOR_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "armor");
+    private static final ResourceLocation DAMAGE_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "damage");
+    private static final ResourceLocation SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "speed");
+    private static final ResourceLocation KNOCKBACK_RESISTANCE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "knockback_resistance");
+    private static final ResourceLocation ATTACK_KNOCKBACK_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "attack_knockback");
+    private static final ResourceLocation ATTACK_SPEED_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "attack_speed");
+    private static final ResourceLocation FOLLOW_RANGE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "follow_range");
+    private static final ResourceLocation FLYING_SPEED_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "flying_speed");
+    private static final ResourceLocation ARMOR_TOUGHNESS_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "armor_toughness");
+    private static final ResourceLocation LUCK_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "luck");
+    private static final ResourceLocation GRAVITY_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "gravity");
+    private static final ResourceLocation SWIM_SPEED_MODIFIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "swim_speed");
+    private static final ResourceLocation BLOCK_INTERACTION_RANGE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "block_reach");
+    private static final ResourceLocation ENTITY_INTERACTION_RANGE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "entity_reach");
+
+    // Дополнительные атрибуты (ванильные, добавлены в 1.21+)
+    private static final ResourceLocation BURNING_TIME_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "burning_time");
+    private static final ResourceLocation EXPLOSION_KNOCKBACK_RESISTANCE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "explosion_knockback_resistance");
+    private static final ResourceLocation FALL_DAMAGE_MULTIPLIER_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "fall_damage_multiplier");
+    private static final ResourceLocation JUMP_STRENGTH_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "jump_strength");
+    private static final ResourceLocation MINING_EFFICIENCY_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "mining_efficiency");
+    private static final ResourceLocation MOVEMENT_EFFICIENCY_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "movement_efficiency");
+    private static final ResourceLocation OXYGEN_BONUS_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "oxygen_bonus");
+    private static final ResourceLocation SAFE_FALL_DISTANCE_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "safe_fall_distance");
+    private static final ResourceLocation BLOCK_BREAK_SPEED_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "block_break_speed");
+    private static final ResourceLocation SNEAKING_SPEED_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "sneaking_speed");
+    private static final ResourceLocation STEP_HEIGHT_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "step_height");
+    private static final ResourceLocation SUBMERGED_MINING_SPEED_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "submerged_mining_speed");
+    private static final ResourceLocation WATER_MOVEMENT_EFFICIENCY_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "water_movement_efficiency");
+
+    // Фиксированный модификатор для временной компенсации урона
+    private static final ResourceLocation DAMAGE_RESET_MOD = ResourceLocation.fromNamespaceAndPath(MOD_ID, "reset_damage");
 
     // Пороговое значение гравитации, ниже которого урон от падения отключается
     private static final double NO_FALL_DAMAGE_GRAVITY_THRESHOLD = 0.6;
 
-    // Храним последнее состояние ночи для каждого измерения
+    // Храним последнее состояние ночи для каждого измерения (только для игроков)
     private static final Map<String, Boolean> lastNightState = new HashMap<>();
-    private static long lastNightCheck = 0;
 
+    // ============================================================
+    // Все стандартные атрибуты (для removeAllModifiers)
+    // ============================================================
+    private static final List<Holder<Attribute>> ALL_ATTRIBUTES = new ArrayList<>();
+    static {
+        ALL_ATTRIBUTES.add(Attributes.MAX_HEALTH);
+        ALL_ATTRIBUTES.add(Attributes.ARMOR);
+        ALL_ATTRIBUTES.add(Attributes.ATTACK_DAMAGE);
+        ALL_ATTRIBUTES.add(Attributes.MOVEMENT_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.KNOCKBACK_RESISTANCE);
+        ALL_ATTRIBUTES.add(Attributes.ATTACK_KNOCKBACK);
+        ALL_ATTRIBUTES.add(Attributes.ATTACK_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.FOLLOW_RANGE);
+        ALL_ATTRIBUTES.add(Attributes.FLYING_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.ARMOR_TOUGHNESS);
+        ALL_ATTRIBUTES.add(Attributes.LUCK);
+        // Ванильные атрибуты (1.21+)
+        ALL_ATTRIBUTES.add(Attributes.GRAVITY);
+        ALL_ATTRIBUTES.add(Attributes.BLOCK_INTERACTION_RANGE);
+        ALL_ATTRIBUTES.add(Attributes.ENTITY_INTERACTION_RANGE);
+        ALL_ATTRIBUTES.add(Attributes.BURNING_TIME);
+        ALL_ATTRIBUTES.add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+        ALL_ATTRIBUTES.add(Attributes.FALL_DAMAGE_MULTIPLIER);
+        ALL_ATTRIBUTES.add(Attributes.JUMP_STRENGTH);
+        ALL_ATTRIBUTES.add(Attributes.MINING_EFFICIENCY);
+        ALL_ATTRIBUTES.add(Attributes.MOVEMENT_EFFICIENCY);
+        ALL_ATTRIBUTES.add(Attributes.OXYGEN_BONUS);
+        ALL_ATTRIBUTES.add(Attributes.SAFE_FALL_DISTANCE);
+        ALL_ATTRIBUTES.add(Attributes.BLOCK_BREAK_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.SNEAKING_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.STEP_HEIGHT);
+        ALL_ATTRIBUTES.add(Attributes.SUBMERGED_MINING_SPEED);
+        ALL_ATTRIBUTES.add(Attributes.WATER_MOVEMENT_EFFICIENCY);
+        // NeoForge атрибуты
+        ALL_ATTRIBUTES.add(NeoForgeMod.SWIM_SPEED);
+    }
+
+    /**
+     * Возвращает полный список атрибутов включая NeoForge-атрибуты.
+     */
+    private static List<Holder<Attribute>> getAllAttributes() {
+        return ALL_ATTRIBUTES;
+    }
+
+    // ============================================================
+    // ResourceLocation для модификаторов IndividualMobManager
+    // ============================================================
+    private static final ResourceLocation INDIVIDUAL_HEALTH = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_health");
+    private static final ResourceLocation INDIVIDUAL_ARMOR = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_armor");
+    private static final ResourceLocation INDIVIDUAL_DAMAGE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_damage");
+    private static final ResourceLocation INDIVIDUAL_SPEED = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_speed");
+    private static final ResourceLocation INDIVIDUAL_KNOCKBACK_RES = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_knockback_resistance");
+    private static final ResourceLocation INDIVIDUAL_ATTACK_KNOCKBACK = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_attack_knockback");
+    private static final ResourceLocation INDIVIDUAL_ATTACK_SPEED = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_attack_speed");
+    private static final ResourceLocation INDIVIDUAL_FOLLOW_RANGE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_follow_range");
+    private static final ResourceLocation INDIVIDUAL_FLYING_SPEED = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_flying_speed");
+    private static final ResourceLocation INDIVIDUAL_SWIM_SPEED = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_swim_speed");
+    private static final ResourceLocation INDIVIDUAL_BLOCK_INTERACTION_RANGE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_block_reach");
+    private static final ResourceLocation INDIVIDUAL_ENTITY_INTERACTION_RANGE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_entity_reach");
+    // Дополнительные individual
+    private static final ResourceLocation INDIVIDUAL_BURNING_TIME = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_burning_time");
+    private static final ResourceLocation INDIVIDUAL_EXPLOSION_KNOCKBACK_RESISTANCE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_explosion_knockback_resistance");
+    private static final ResourceLocation INDIVIDUAL_FALL_DAMAGE_MULTIPLIER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_fall_damage_multiplier");
+    private static final ResourceLocation INDIVIDUAL_JUMP_STRENGTH = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_jump_strength");
+    private static final ResourceLocation INDIVIDUAL_OXYGEN_BONUS = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_oxygen_bonus");
+    private static final ResourceLocation INDIVIDUAL_SAFE_FALL_DISTANCE = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_safe_fall_distance");
+    private static final ResourceLocation INDIVIDUAL_SNEAKING_SPEED = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_sneaking_speed");
+    private static final ResourceLocation INDIVIDUAL_WATER_MOVEMENT_EFFICIENCY = ResourceLocation.fromNamespaceAndPath(MOD_ID, "individual_water_movement_efficiency");
+
+    // Все модификаторы мода для удаления
+    private static final ResourceLocation[] ALL_MODIFIER_IDS = {
+        HEALTH_MODIFIER, ARMOR_MODIFIER, DAMAGE_MODIFIER, SPEED_MODIFIER,
+        KNOCKBACK_RESISTANCE_MOD, ATTACK_KNOCKBACK_MOD, ATTACK_SPEED_MOD,
+        FOLLOW_RANGE_MOD, FLYING_SPEED_MOD, ARMOR_TOUGHNESS_MOD, LUCK_MODIFIER,
+        GRAVITY_MODIFIER, SWIM_SPEED_MODIFIER, BLOCK_INTERACTION_RANGE_MOD, ENTITY_INTERACTION_RANGE_MOD, DAMAGE_RESET_MOD,
+        BURNING_TIME_MOD, EXPLOSION_KNOCKBACK_RESISTANCE_MOD, FALL_DAMAGE_MULTIPLIER_MOD,
+        JUMP_STRENGTH_MOD, MINING_EFFICIENCY_MOD, MOVEMENT_EFFICIENCY_MOD, OXYGEN_BONUS_MOD,
+        SAFE_FALL_DISTANCE_MOD, BLOCK_BREAK_SPEED_MOD, SNEAKING_SPEED_MOD, STEP_HEIGHT_MOD,
+        SUBMERGED_MINING_SPEED_MOD, WATER_MOVEMENT_EFFICIENCY_MOD,
+        INDIVIDUAL_HEALTH, INDIVIDUAL_ARMOR, INDIVIDUAL_DAMAGE, INDIVIDUAL_SPEED,
+        INDIVIDUAL_KNOCKBACK_RES, INDIVIDUAL_ATTACK_KNOCKBACK, INDIVIDUAL_ATTACK_SPEED,
+        INDIVIDUAL_FOLLOW_RANGE, INDIVIDUAL_FLYING_SPEED, INDIVIDUAL_SWIM_SPEED,
+        INDIVIDUAL_BLOCK_INTERACTION_RANGE, INDIVIDUAL_ENTITY_INTERACTION_RANGE,
+        INDIVIDUAL_BURNING_TIME, INDIVIDUAL_EXPLOSION_KNOCKBACK_RESISTANCE,
+        INDIVIDUAL_FALL_DAMAGE_MULTIPLIER, INDIVIDUAL_JUMP_STRENGTH,
+        INDIVIDUAL_OXYGEN_BONUS, INDIVIDUAL_SAFE_FALL_DISTANCE,
+        INDIVIDUAL_SNEAKING_SPEED, INDIVIDUAL_WATER_MOVEMENT_EFFICIENCY
+    };
+
+    // ============================================================
+    // EVENT: Спавн сущности
+    // ============================================================
     @SubscribeEvent
     public static void onEntitySpawn(EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof LivingEntity entity) {
@@ -65,11 +186,10 @@ public class EntityHandler {
             }
             String dimKey = dimensionId.toString();
             boolean isNight = isNight(world);
-            
-            // Получаем множители сложности
+
             double healthMultiplier = getDifficultyMultiplier(world.getDifficulty(), true);
             double damageMultiplier = getDifficultyMultiplier(world.getDifficulty(), false);
-            
+
             if (entity instanceof Player player) {
                 handlePlayerModifiers(player, dimKey, isNight);
             } else {
@@ -78,108 +198,139 @@ public class EntityHandler {
         }
     }
 
+    // ============================================================
+    // EVENT: Тик мира (смена дня/ночь)
+    // ============================================================
     @SubscribeEvent
-    public static void onWorldTick(TickEvent.LevelTickEvent event) {
-        if (!event.level.isClientSide() && event.phase == TickEvent.Phase.END) {
-            Level world = event.level;
+    public static void onWorldTick(LevelTickEvent.Post event) {
+        if (!event.getLevel().isClientSide()) {
+            Level world = event.getLevel();
+            if (world.dimension() == null) return;
+
             ResourceLocation dimensionId = world.dimension().location();
             String dimKey = dimensionId.toString();
-            
-            // Проверяем только раз в 200 тиков (10 секунд), чтобы снизить нагрузку
-            if (world.getGameTime() - lastNightCheck < 200) {
-                return;
-            }
-            
-            lastNightCheck = world.getGameTime();
             boolean isNight = isNight(world);
-            
-            // Проверяем состояние ночи для каждого измерения
             Boolean lastState = lastNightState.get(dimKey);
-            
-            // Если это первый тик или состояние изменилось
+
+            // Если состояние ночи изменилось — обновляем только игроков
             if (lastState == null || lastState != isNight) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Time state changed in dimension {}: isNight={}, time={}", 
+                if (isDebugLogging()) {
+                    LOGGER.debug("Time state changed in dimension {}: isNight={}, time={}",
                         dimKey, isNight, world.getDayTime() % 24000);
                 }
-                
+
                 lastNightState.put(dimKey, isNight);
-                
-                // Для каждого игрока в мире проверяем, нужно ли обновлять его модификаторы
+
+                // Обновляем игроков
                 for (Player player : world.players()) {
-                    // Проверяем, не заблокирован ли игрок в данном измерении
                     if (isPlayerBlocked(player, dimKey)) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Player {} is blocked in dimension {}, skipping", 
+                        if (isDebugLogging()) {
+                            LOGGER.debug("Player {} is blocked in dimension {}, skipping",
                                 player.getName().getString(), dimKey);
                         }
                         continue;
                     }
-                    
-                    // Получаем настройки игрока для текущего измерения
+
                     PlayerModifiers playerMods = PlayerConfigManager.getPlayerConfig().getModifiersForDimension(dimKey);
                     if (playerMods == null) {
-                        LOGGER.warn("No player modifiers found for dimension {}, skipping player {}", 
-                            dimKey, player.getName().getString());
+                        if (isDebugLogging()) {
+                            LOGGER.debug("No player modifiers for dimension {}, skipping player {}",
+                                dimKey, player.getName().getString());
+                        }
                         continue;
                     }
-                    
-                    // Проверяем, включено ли ночное масштабирование
+
                     if (!playerMods.isNightScalingEnabled()) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Night scaling disabled for player {}, skipping update on day/night change", 
+                        if (isDebugLogging()) {
+                            LOGGER.debug("Night scaling disabled for player {}, skipping day/night update",
                                 player.getName().getString());
                         }
                         continue;
                     }
-                    
-                    // Обновляем только если включено ночное масштабирование
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Updating modifiers for player {} due to day/night change. Night scaling enabled", 
-                            player.getName().getString());
-                    }
+
                     handlePlayerModifiers(player, dimKey, isNight);
-                }
-                
-                // Обновляем модификаторы для мобов только в ограниченном радиусе вокруг игроков
-                double range = 128.0; // Обновляем мобов только в радиусе 128 блоков от игроков
-                
-                double healthMultiplier = getDifficultyMultiplier(world.getDifficulty(), true);
-                double damageMultiplier = getDifficultyMultiplier(world.getDifficulty(), false);
-                
-                for (Player player : world.players()) {
-                    AABB playerArea = new AABB(
-                        player.getX() - range, 0, player.getZ() - range,
-                        player.getX() + range, world.getMaxBuildHeight(), player.getZ() + range
-                    );
-                    
-                    for (LivingEntity entity : world.getEntitiesOfClass(LivingEntity.class, playerArea)) {
-                        if (!(entity instanceof Player)) {
-                            handleMobModifiers(entity, world, dimKey, isNight, healthMultiplier, damageMultiplier);
-                        }
-                    }
                 }
             }
         }
     }
 
+    // ============================================================
+    // EVENT: Выгрузка мира — очистка кэшей измерения
+    // ============================================================
+    @SubscribeEvent
+    public static void onWorldUnload(LevelEvent.Unload event) {
+        if (!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+        ResourceLocation dimensionId = serverLevel.dimension() != null
+            ? serverLevel.dimension().location() : null;
+        if (dimensionId == null) return;
+        String dimKey = dimensionId.toString();
+
+        lastNightState.remove(dimKey);
+
+        if (isDebugLogging()) {
+            LOGGER.debug("Cleared night state cache for unloaded dimension: {}", dimKey);
+        }
+    }
+
+    // ============================================================
+    // EVENT: Падение сущности
+    // ============================================================
+    @SubscribeEvent
+    public static void onEntityFall(LivingFallEvent event) {
+        LivingEntity entity = event.getEntity();
+        try {
+            AttributeInstance attr = entity.getAttribute(Attributes.GRAVITY);
+            if (attr == null) return;
+
+            double baseGravity = attr.getBaseValue();
+            if (baseGravity <= 0.0) return; // защита от деления на ноль
+
+            double currentGravity = attr.getValue();
+            double gravityRatio = currentGravity / baseGravity;
+
+            if (gravityRatio < NO_FALL_DAMAGE_GRAVITY_THRESHOLD) {
+                // Полностью отменяем урон
+                event.setCanceled(true);
+                if (isDebugLogging()) {
+                LOGGER.debug("Canceled fall damage for entity {} due to low gravity: {}",
+                    entity.getType().getDescriptionId(), gravityRatio);}
+            } else {
+                // Масштабируем урон пропорционально гравитации
+                float originalDamage = event.getDamageMultiplier();
+                float scaledDamage = (float) (originalDamage * gravityRatio);
+                event.setDamageMultiplier(scaledDamage);
+                if (isDebugLogging()) {
+                LOGGER.debug("Scaled fall damage for entity {} by gravity ratio: {} (original: {}, scaled: {})",
+                    entity.getType().getDescriptionId(), gravityRatio, originalDamage, scaledDamage);
+            }
+        }
+        } catch (Exception e) {
+
+            LOGGER.error("Error handling fall damage for entity {}", entity.getType(), e);
+        }
+    }
+
+    // ============================================================
+    // Утилиты
+    // ============================================================
+
     private static boolean isPlayerBlocked(Player player, String dimensionId) {
         return PlayerConfigManager.getPlayerConfig().isPlayerBlocked(player.getName().getString(), dimensionId);
     }
 
-    private static boolean isEntityBlocked(DimensionConfig config, ResourceLocation entityId, boolean isNight, boolean isCave) {
+    /**
+     * Проверяет, заблокирована ли сущность в данном измерении.
+     * Использует только общие чёрные списки (mod + entity).
+     */
+    private static boolean isEntityBlocked(DimensionConfig config, ResourceLocation entityId) {
         String modId = entityId.getNamespace();
         String entityIdStr = entityId.toString();
-        
-        // Используем только общие черные списки для всех условий (день, ночь, пещера)
         return config.getModBlacklist().contains(modId) || config.getEntityBlacklist().contains(entityIdStr);
     }
 
     public static boolean isNight(Level world) {
         long currentTime = world.getDayTime();
         long timeOfDay = currentTime % 24000;
-        
-        // Реальная проверка времени суток вместо кэширования
         return timeOfDay >= 13000 && timeOfDay < 23000;
     }
 
@@ -192,149 +343,191 @@ public class EntityHandler {
         };
     }
 
+    // ============================================================
+    // Проверка наличия модификаторов мода на сущности
+    // ============================================================
+
+    /**
+     * Проверяет, включено ли детальное дебаг-логирование (наша настройка + SLF4J).
+     */
+    private static boolean isDebugLogging() {
+        return MobScalerConfig.isDebugLoggingEnabled() && LOGGER.isDebugEnabled();
+    }
+
+    /**
+     * Проверяет, есть ли уже на сущности хотя бы один модификатор мода.
+     * Используется для предотвращения повторной обработки при EntityJoinLevelEvent
+     * (срабатывает не только при спавне, но и при телепортации/загрузке чанка).
+     */
+    private static boolean hasMobscalerModifiers(LivingEntity entity) {
+        // Проверяем основной маркер — модификатор здоровья
+        AttributeInstance healthAttr = entity.getAttribute(Attributes.MAX_HEALTH);
+        if (healthAttr != null && (healthAttr.hasModifier(HEALTH_MODIFIER) || healthAttr.hasModifier(INDIVIDUAL_HEALTH))) {
+            return true;
+        }
+        return false;
+    }
+
+    // ============================================================
+    // Обработка игрока
+    // ============================================================
     public static void handlePlayerModifiers(Player player, String dimKey, boolean isNight) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Handling player modifiers for {} in dimension {}, isNight: {}", 
+            LOGGER.debug("Handling player modifiers for {} in dimension {}, isNight: {}",
                 player.getName().getString(), dimKey, isNight);
         }
-            
+
         if (isPlayerBlocked(player, dimKey)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Player {} is blocked in dimension {}", player.getName().getString(), dimKey);
             }
             return;
         }
-        
-        // Получаем модификаторы игрока
+
         PlayerModifiers playerMods = PlayerConfigManager.getPlayerConfig().getModifiersForDimension(dimKey);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Player modifiers: {}, Night scaling enabled: {}", 
-                playerMods != null, playerMods != null ? playerMods.isNightScalingEnabled() : false);
-        }
-            
         if (playerMods == null) {
             LOGGER.warn("No player modifiers found for dimension {}", dimKey);
             return;
         }
-        
-        // Сохраняем текущее процентное значение здоровья игрока
-        float healthPercent = player.getHealth() / player.getMaxHealth();
-        
-        // Выбираем нужные модификаторы в зависимости от времени суток
+
         boolean useNightModifiers = isNight && playerMods.isNightScalingEnabled();
-        
-        if (LOGGER.isDebugEnabled()) {
-            if (isNight && !playerMods.isNightScalingEnabled()) {
-                LOGGER.debug("Night scaling disabled for player {}, using day modifiers", 
-                    player.getName().getString());
-            } else {
-                LOGGER.debug("Using {} modifiers for player {}", 
-                    useNightModifiers ? "night" : "day", 
-                    player.getName().getString());
-            }
-        }
-        
-        // Плавно обновляем атрибуты, сохраняя модификаторы от других модов
-        // Атрибуты здоровья
-        smoothlyUpdateAttribute(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER_UUID, "health",
+
+        // Сохраняем текущий процент здоровья
+        float healthPercent = player.getHealth() / player.getMaxHealth();
+
+        // Обновляем все атрибуты игрока
+        smoothlyUpdateAttribute(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER, "health",
             useNightModifiers ? playerMods.getNightHealthAddition() : playerMods.getHealthAddition(),
             useNightModifiers ? playerMods.getNightHealthMultiplier() : playerMods.getHealthMultiplier(),
             1.0);
-        
-        // Атрибуты брони
-        smoothlyUpdateAttribute(player, Attributes.ARMOR, ARMOR_MODIFIER_UUID, "armor",
+
+        smoothlyUpdateAttribute(player, Attributes.ARMOR, ARMOR_MODIFIER, "armor",
             useNightModifiers ? playerMods.getNightArmorAddition() : playerMods.getArmorAddition(),
             useNightModifiers ? playerMods.getNightArmorMultiplier() : playerMods.getArmorMultiplier(),
             1.0);
-        
-        // Атрибуты урона
-        smoothlyUpdateAttribute(player, Attributes.ATTACK_DAMAGE, DAMAGE_MODIFIER_UUID, "damage",
+
+        smoothlyUpdateAttribute(player, Attributes.ATTACK_DAMAGE, DAMAGE_MODIFIER, "damage",
             useNightModifiers ? playerMods.getNightDamageAddition() : playerMods.getDamageAddition(),
             useNightModifiers ? playerMods.getNightDamageMultiplier() : playerMods.getDamageMultiplier(),
             1.0);
-        
-        // Атрибуты скорости
-        smoothlyUpdateAttribute(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER_UUID, "speed",
+
+        smoothlyUpdateAttribute(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER, "speed",
             useNightModifiers ? playerMods.getNightSpeedAddition() : playerMods.getSpeedAddition(),
             useNightModifiers ? playerMods.getNightSpeedMultiplier() : playerMods.getSpeedMultiplier(),
             1.0);
-        
-        // Атрибуты сопротивления отбрасыванию
-        smoothlyUpdateAttribute(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE_UUID, "knockback_resistance",
+
+        smoothlyUpdateAttribute(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE_MOD, "knockback_resistance",
             useNightModifiers ? playerMods.getNightKnockbackResistanceAddition() : playerMods.getKnockbackResistanceAddition(),
             useNightModifiers ? playerMods.getNightKnockbackResistanceMultiplier() : playerMods.getKnockbackResistanceMultiplier(),
             1.0);
-        
-        // Атрибуты отбрасывания при атаке
-        smoothlyUpdateAttribute(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_UUID, "attack_knockback",
+
+        smoothlyUpdateAttribute(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_MOD, "attack_knockback",
             useNightModifiers ? playerMods.getNightAttackKnockbackAddition() : playerMods.getAttackKnockbackAddition(),
             useNightModifiers ? playerMods.getNightAttackKnockbackMultiplier() : playerMods.getAttackKnockbackMultiplier(),
             1.0);
-        
-        // Атрибуты скорости атаки
-        smoothlyUpdateAttribute(player, Attributes.ATTACK_SPEED, ATTACK_SPEED_UUID, "attack_speed",
+
+        smoothlyUpdateAttribute(player, Attributes.ATTACK_SPEED, ATTACK_SPEED_MOD, "attack_speed",
             useNightModifiers ? playerMods.getNightAttackSpeedAddition() : playerMods.getAttackSpeedAddition(),
             useNightModifiers ? playerMods.getNightAttackSpeedMultiplier() : playerMods.getAttackSpeedMultiplier(),
             1.0);
-        
-        // Атрибуты дальности следования
-        smoothlyUpdateAttribute(player, Attributes.FOLLOW_RANGE, FOLLOW_RANGE_UUID, "follow_range",
+
+        smoothlyUpdateAttribute(player, Attributes.FOLLOW_RANGE, FOLLOW_RANGE_MOD, "follow_range",
             useNightModifiers ? playerMods.getNightFollowRangeAddition() : playerMods.getFollowRangeAddition(),
             useNightModifiers ? playerMods.getNightFollowRangeMultiplier() : playerMods.getFollowRangeMultiplier(),
             1.0);
-        
-        // Атрибуты скорости полета
-        smoothlyUpdateAttribute(player, Attributes.FLYING_SPEED, FLYING_SPEED_UUID, "flying_speed",
+
+        smoothlyUpdateAttribute(player, Attributes.FLYING_SPEED, FLYING_SPEED_MOD, "flying_speed",
             useNightModifiers ? playerMods.getNightFlyingSpeedAddition() : playerMods.getFlyingSpeedAddition(),
             useNightModifiers ? playerMods.getNightFlyingSpeedMultiplier() : playerMods.getFlyingSpeedMultiplier(),
             1.0);
-        
-        // Атрибуты прочности брони
-        smoothlyUpdateAttribute(player, Attributes.ARMOR_TOUGHNESS, ARMOR_TOUGHNESS_UUID, "armor_toughness",
-            useNightModifiers ? (playerMods.getNightArmorToughnessAddition() != 0 ? playerMods.getNightArmorToughnessAddition() : 0.0) : 
-                               (playerMods.getArmorToughnessAddition() != 0 ? playerMods.getArmorToughnessAddition() : 0.0),
-            useNightModifiers ? (playerMods.getNightArmorToughnessMultiplier() != 0 ? playerMods.getNightArmorToughnessMultiplier() : 1.0) : 
-                               (playerMods.getArmorToughnessMultiplier() != 0 ? playerMods.getArmorToughnessMultiplier() : 1.0),
+
+        smoothlyUpdateAttribute(player, Attributes.ARMOR_TOUGHNESS, ARMOR_TOUGHNESS_MOD, "armor_toughness",
+            useNightModifiers ? playerMods.getNightArmorToughnessAddition() : playerMods.getArmorToughnessAddition(),
+            useNightModifiers ? playerMods.getNightArmorToughnessMultiplier() : playerMods.getArmorToughnessMultiplier(),
             1.0);
-        
-        // Атрибуты удачи
-        smoothlyUpdateAttribute(player, Attributes.LUCK, LUCK_UUID, "luck",
-            useNightModifiers ? (playerMods.getNightLuckAddition() != 0 ? playerMods.getNightLuckAddition() : 0.0) :
-                               (playerMods.getLuckAddition() != 0 ? playerMods.getLuckAddition() : 0.0),
-            useNightModifiers ? (playerMods.getNightLuckMultiplier() != 0 ? playerMods.getNightLuckMultiplier() : 1.0) :
-                               (playerMods.getLuckMultiplier() != 0 ? playerMods.getLuckMultiplier() : 1.0),
+
+        smoothlyUpdateAttribute(player, Attributes.LUCK, LUCK_MODIFIER, "luck",
+            useNightModifiers ? playerMods.getNightLuckAddition() : playerMods.getLuckAddition(),
+            useNightModifiers ? playerMods.getNightLuckMultiplier() : playerMods.getLuckMultiplier(),
             1.0);
-        
-        // Обработка гравитации для игрока
-        try {
-            // Получаем атрибут гравитации из ForgeMod
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field gravityField = forgeModClass.getDeclaredField("ENTITY_GRAVITY");
-            gravityField.setAccessible(true);
-            Object gravitySupplier = gravityField.get(null);
-            
-            // Получаем атрибут гравитации через Supplier
-            net.minecraft.world.entity.ai.attributes.Attribute gravityAttribute = null;
-            if (gravitySupplier instanceof java.util.function.Supplier<?>) {
-                gravityAttribute = (net.minecraft.world.entity.ai.attributes.Attribute) 
-                    ((java.util.function.Supplier<?>) gravitySupplier).get();
-            }
-            
-            if (gravityAttribute != null) {
-                // Применяем множитель гравитации
-                smoothlyUpdateAttribute(player, gravityAttribute, GRAVITY_UUID, "gravity",
-                    0.0, // Не используем сложение для гравитации, только множитель
-                    playerMods.getGravityMultiplier(), // Используем множитель гравитации из конфигурации
-                    1.0);
-                
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error applying gravity modifier for player", e);
-        }
-        
-        // Восстанавливаем здоровье игрока в соответствии с сохраненным процентом
-        player.setHealth(player.getMaxHealth() * healthPercent);
-        
+
+        // Extended player attributes (1.21+)
+        smoothlyUpdateAttribute(player, Attributes.BURNING_TIME, BURNING_TIME_MOD, "burning_time",
+            useNightModifiers ? playerMods.getNightBurningTimeAddition() : playerMods.getBurningTimeAddition(),
+            useNightModifiers ? playerMods.getNightBurningTimeMultiplier() : playerMods.getBurningTimeMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.EXPLOSION_KNOCKBACK_RESISTANCE, EXPLOSION_KNOCKBACK_RESISTANCE_MOD, "explosion_knockback_resistance",
+            useNightModifiers ? playerMods.getNightExplosionKnockbackResistanceAddition() : playerMods.getExplosionKnockbackResistanceAddition(),
+            useNightModifiers ? playerMods.getNightExplosionKnockbackResistanceMultiplier() : playerMods.getExplosionKnockbackResistanceMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.FALL_DAMAGE_MULTIPLIER, FALL_DAMAGE_MULTIPLIER_MOD, "fall_damage_multiplier",
+            useNightModifiers ? playerMods.getNightFallDamageMultiplier() : playerMods.getFallDamageMultiplier(),
+            useNightModifiers ? playerMods.getNightFallDamageMultiplier() : playerMods.getFallDamageMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.JUMP_STRENGTH, JUMP_STRENGTH_MOD, "jump_strength",
+            useNightModifiers ? playerMods.getNightJumpStrengthAddition() : playerMods.getJumpStrengthAddition(),
+            useNightModifiers ? playerMods.getNightJumpStrengthMultiplier() : playerMods.getJumpStrengthMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.MINING_EFFICIENCY, MINING_EFFICIENCY_MOD, "mining_efficiency",
+            useNightModifiers ? playerMods.getNightMiningEfficiencyAddition() : playerMods.getMiningEfficiencyAddition(),
+            useNightModifiers ? playerMods.getNightMiningEfficiencyMultiplier() : playerMods.getMiningEfficiencyMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.MOVEMENT_EFFICIENCY, MOVEMENT_EFFICIENCY_MOD, "movement_efficiency",
+            useNightModifiers ? playerMods.getNightMovementEfficiencyAddition() : playerMods.getMovementEfficiencyAddition(),
+            useNightModifiers ? playerMods.getNightMovementEfficiencyMultiplier() : playerMods.getMovementEfficiencyMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.OXYGEN_BONUS, OXYGEN_BONUS_MOD, "oxygen_bonus",
+            useNightModifiers ? playerMods.getNightOxygenBonusAddition() : playerMods.getOxygenBonusAddition(),
+            useNightModifiers ? playerMods.getNightOxygenBonusMultiplier() : playerMods.getOxygenBonusMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.SAFE_FALL_DISTANCE, SAFE_FALL_DISTANCE_MOD, "safe_fall_distance",
+            useNightModifiers ? playerMods.getNightSafeFallDistanceAddition() : playerMods.getSafeFallDistanceAddition(),
+            useNightModifiers ? playerMods.getNightSafeFallDistanceMultiplier() : playerMods.getSafeFallDistanceMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.BLOCK_BREAK_SPEED, BLOCK_BREAK_SPEED_MOD, "block_break_speed",
+            useNightModifiers ? playerMods.getNightBlockBreakSpeedAddition() : playerMods.getBlockBreakSpeedAddition(),
+            useNightModifiers ? playerMods.getNightBlockBreakSpeedMultiplier() : playerMods.getBlockBreakSpeedMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.BLOCK_INTERACTION_RANGE, BLOCK_INTERACTION_RANGE_MOD, "block_reach",
+            useNightModifiers ? playerMods.getNightBlockReachAddition() : playerMods.getBlockReachAddition(),
+            useNightModifiers ? playerMods.getNightBlockReachMultiplier() : playerMods.getBlockReachMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.ENTITY_INTERACTION_RANGE, ENTITY_INTERACTION_RANGE_MOD, "entity_reach",
+            useNightModifiers ? playerMods.getNightEntityReachAddition() : playerMods.getEntityReachAddition(),
+            useNightModifiers ? playerMods.getNightEntityReachMultiplier() : playerMods.getEntityReachMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.STEP_HEIGHT, STEP_HEIGHT_MOD, "step_height",
+            useNightModifiers ? playerMods.getNightStepHeightAddition() : playerMods.getStepHeightAddition(),
+            useNightModifiers ? playerMods.getNightStepHeightMultiplier() : playerMods.getStepHeightMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.SUBMERGED_MINING_SPEED, SUBMERGED_MINING_SPEED_MOD, "submerged_mining_speed",
+            useNightModifiers ? playerMods.getNightSubmergedMiningSpeedAddition() : playerMods.getSubmergedMiningSpeedAddition(),
+            useNightModifiers ? playerMods.getNightSubmergedMiningSpeedMultiplier() : playerMods.getSubmergedMiningSpeedMultiplier(),
+            1.0);
+
+        smoothlyUpdateAttribute(player, Attributes.WATER_MOVEMENT_EFFICIENCY, WATER_MOVEMENT_EFFICIENCY_MOD, "water_movement_efficiency",
+            useNightModifiers ? playerMods.getNightWaterMovementEfficiencyAddition() : playerMods.getWaterMovementEfficiencyAddition(),
+            useNightModifiers ? playerMods.getNightWaterMovementEfficiencyMultiplier() : playerMods.getWaterMovementEfficiencyMultiplier(),
+            1.0);
+
+        // Гравитация через NeoForgeMod
+        applyPlayerGravityModifier(player, playerMods.getGravityMultiplier());
+
+        // Восстанавливаем здоровье в том же проценте от нового максимума
+        player.setHealth(Math.min(player.getMaxHealth(), player.getMaxHealth() * healthPercent));
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Player health restored to {}% ({}/{})",
                 Math.round(healthPercent * 100),
@@ -342,247 +535,325 @@ public class EntityHandler {
                 String.format("%.1f", player.getMaxHealth()));
         }
     }
-    
+
     /**
-     * Плавно обновляет атрибут, сохраняя модификаторы от других модов
+     * Применяет множитель гравитации для игрока.
      */
-    private static void smoothlyUpdateAttribute(LivingEntity entity, 
-                                                net.minecraft.world.entity.ai.attributes.Attribute attribute, 
-                                                UUID modifierUuid, 
-                                                String name, 
-                                                double addition, 
-                                                double multiplier, 
-                                                double difficultyMultiplier) {
-        AttributeInstance attrInstance = entity.getAttribute(attribute);
-        if (attrInstance != null) {
-            double baseValue = attrInstance.getBaseValue();
-            
-            // Расчет нового значения с применением всех множителей
-            double newValue = (baseValue + addition) * multiplier * difficultyMultiplier;
-            double changeAmount = newValue - baseValue;
-            
-            // Проверяем, достаточно ли значимое изменение
-            if (Math.abs(changeAmount) > 0.001) {
-                // Проверяем, существует ли уже наш модификатор
-                AttributeModifier existingModifier = attrInstance.getModifier(modifierUuid);
-                if (existingModifier != null) {
-                    // Удаляем существующий модификатор только если значение отличается
-                    if (Math.abs(existingModifier.getAmount() - changeAmount) > 0.001) {
-                        attrInstance.removeModifier(modifierUuid);
-                        attrInstance.addPermanentModifier(new AttributeModifier(modifierUuid, "mobscaler_" + name, changeAmount, AttributeModifier.Operation.ADDITION));
-                        
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Updated modifier for {}: {} = {}", 
-                                entity instanceof Player ? ((Player)entity).getName().getString() : entity.getType().getDescriptionId(),
-                                attribute.getDescriptionId(), 
-                                String.format("%.2f", changeAmount));
-                        }
-                    }
-                } else {
-                    // Если модификатора нет, добавляем новый
-                    attrInstance.addPermanentModifier(new AttributeModifier(modifierUuid, "mobscaler_" + name, changeAmount, AttributeModifier.Operation.ADDITION));
-                    
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Added new modifier for {}: {} = {}", 
-                            entity instanceof Player ? ((Player)entity).getName().getString() : entity.getType().getDescriptionId(),
-                            attribute.getDescriptionId(), 
-                            String.format("%.2f", changeAmount));
-                    }
-                }
-            } else if (attrInstance.getModifier(modifierUuid) != null) {
-                // Если изменение незначительное, но модификатор существует, удаляем его
-                attrInstance.removeModifier(modifierUuid);
-                
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Removed insignificant modifier for {}: {}", 
-                        entity instanceof Player ? ((Player)entity).getName().getString() : entity.getType().getDescriptionId(),
-                        attribute.getDescriptionId());
-                }
+    private static void applyPlayerGravityModifier(Player player, double gravityMultiplier) {
+        try {
+            AttributeInstance gravityAttr = player.getAttribute(Attributes.GRAVITY);
+            if (gravityAttr == null) {
+                LOGGER.warn("Gravity attribute недоступна для игрока");
+                return;
             }
+
+            smoothlyUpdateAttribute(player, Attributes.GRAVITY, GRAVITY_MODIFIER, "gravity",
+                0.0,
+                gravityMultiplier,
+                1.0);
+        } catch (Exception e) {
+            LOGGER.error("Error applying gravity modifier for player {}", player.getName().getString(), e);
         }
     }
 
-    public static void handleMobModifiers(LivingEntity entity, Level world, String dimKey, boolean isNight, double healthMultiplier, double damageMultiplier) {
+    // ============================================================
+    // smoothlyUpdateAttribute — обновление атрибута с сохранением чужих модификаторов
+    // ============================================================
+    private static void smoothlyUpdateAttribute(LivingEntity entity,
+                                                Holder<Attribute> attribute,
+                                                ResourceLocation modifierId,
+                                                String name,
+                                                double addition,
+                                                double multiplier,
+                                                double difficultyMultiplier) {
+        AttributeInstance attrInstance = entity.getAttribute(attribute);
+        if (attrInstance == null) return;
+
+        double baseValue = attrInstance.getBaseValue();
+        double newValue = (baseValue + addition) * multiplier * difficultyMultiplier;
+        double changeAmount = newValue - baseValue;
+
+        boolean hasModifier = attrInstance.hasModifier(modifierId);
+
+        if (Math.abs(changeAmount) > 0.001) {
+            // Значимое изменение — обновляем или создаём модификатор
+            AttributeModifier modifier = new AttributeModifier(modifierId, changeAmount, AttributeModifier.Operation.ADD_VALUE);
+            attrInstance.addOrReplacePermanentModifier(modifier);
+        } else if (hasModifier) {
+            // Изменение незначительно — удаляем модификатор
+            attrInstance.removeModifier(modifierId);
+        }
+    }
+
+    // ============================================================
+    // Обработка моба
+    // ============================================================
+
+    /**
+     * Обрабатывает модификаторы моба (без принудительной перезаписи).
+     * Используется при спавне сущности.
+     */
+    public static void handleMobModifiers(LivingEntity entity, Level world, String dimKey,
+                                          boolean isNight, double healthMultiplier, double damageMultiplier) {
+        handleMobModifiers(entity, world, dimKey, isNight, healthMultiplier, damageMultiplier, false);
+    }
+
+    /**
+     * Обрабатывает модификаторы моба с флагом принудительной перезаписи.
+     * @param force если true — модификаторы перезаписываются даже если уже присутствуют
+     */
+    public static void handleMobModifiers(LivingEntity entity, Level world, String dimKey,
+                                          boolean isNight, double healthMultiplier, double damageMultiplier,
+                                          boolean force) {
         if (entity.getType() == null) {
             LOGGER.warn("Entity type is null for entity: {}", entity);
             return;
         }
-        
+
         ResourceLocation entityId = EntityType.getKey(entity.getType());
         String entityIdStr = entityId.toString();
         String modId = entityId.getNamespace();
         DimensionConfig dimConfig = MobScalerConfig.DIMENSIONS.get(dimKey);
-        
+
         if (dimConfig == null) {
             LOGGER.warn("Dimension config is null for dimension: {}", dimKey);
             return;
         }
 
-        
-        // Проверяем все атрибуты перед удалением модификаторов
-        logAllAttributes(entity, "BEFORE REMOVING MODIFIERS");
-
-        // Всегда удаляем все существующие модификаторы перед применением новых
-        removeAllModifiers(entity);
-        
-        // Проверяем все атрибуты после удаления модификаторов
-        logAllAttributes(entity, "AFTER REMOVING MODIFIERS");
-
-        // Проверяем блокировку сущности
-        boolean isCave = entity.getY() <= dimConfig.getCaveHeight();
-        if (isEntityBlocked(dimConfig, entityId, isNight, isCave)) {
+        // Проверяем блокировку до удаления модификаторов
+        if (isEntityBlocked(dimConfig, entityId)) {
+            if (isDebugLogging()) {
             LOGGER.debug("Entity {} is blocked in dimension {}", entityIdStr, dimKey);
+            return;}
+        }
+
+        // Проверяем, есть ли уже наши модификаторы — если да и не force, не обрабатываем повторно
+        // EntityJoinLevelEvent срабатывает не только при спавне, но и при телепортации/загрузке чанка
+        if (!force && hasMobscalerModifiers(entity)) {
             return;
         }
 
-        // Проверяем наличие индивидуальных настроек для моба
-        IndividualMobConfig mobConfig = IndividualMobManager.getIndividualMobConfig(entityIdStr);
-        if(LOGGER.isDebugEnabled()){
-            LOGGER.debug("Individual config for entity {}: {}", entityIdStr, mobConfig != null ? "FOUND" : "NOT FOUND");
+        // Логируем атрибуты до удаления (только если включён debug)
+        if (isDebugLogging()) {
+            logAllAttributes(entity, "BEFORE REMOVING MODIFIERS");
         }
-        
+
+        // Удаляем ВСЕ модификаторы перед применением новых
+        removeAllModifiers(entity);
+
+        // Логируем атрибуты после удаления (только если включён debug)
+        if (isDebugLogging()) {
+            logAllAttributes(entity, "AFTER REMOVING MODIFIERS");
+        }
+
+        // Приоритет: IndividualMobConfig > ModConfig > Standard
+        IndividualMobConfig mobConfig = IndividualMobManager.getIndividualMobConfig(entityIdStr);
         if (mobConfig != null) {
-            if(LOGGER.isDebugEnabled()){
-                LOGGER.debug("Found individual config for entity: {} in dimension: {}", entityIdStr, dimKey);
-            }
-            // Применяем индивидуальные модификаторы
-            if(LOGGER.isDebugEnabled()){
+            if (isDebugLogging()) {
                 LOGGER.debug("Applying individual modifiers for entity: {} in dimension: {}", entityIdStr, dimKey);
             }
             IndividualMobManager.applyModifiers(entity, healthMultiplier, damageMultiplier);
         } else {
-            // Проверяем наличие настроек мода
             IndividualMobAttributes modConfig = IndividualMobManager.getModConfig(modId);
-            if(LOGGER.isDebugEnabled()){
-                LOGGER.debug("Mod config for {}: {}", modId, modConfig != null ? "FOUND" : "NOT FOUND");
-            }
-            
             if (modConfig != null) {
-                if(LOGGER.isDebugEnabled()){
-                    LOGGER.debug("Found mod config for: {} in dimension: {}", modId, dimKey);
-                }
-                // Применяем модификаторы мода
-                if(LOGGER.isDebugEnabled()){
+                if (isDebugLogging()) {
                     LOGGER.debug("Applying mod modifiers for: {} in dimension: {}", modId, dimKey);
                 }
                 IndividualMobManager.applyModifiers(entity, healthMultiplier, damageMultiplier);
             } else {
-                // Если нет ни индивидуальных настроек, ни настроек мода, применяем стандартные модификаторы
-                if(LOGGER.isDebugEnabled()){    
-                    LOGGER.debug("No individual or mod config found, applying standard modifiers for entity: {} in dimension: {}", entityIdStr, dimKey);
+                if (isDebugLogging()) {
+                    LOGGER.debug("Applying standard modifiers for entity: {} in dimension: {}", entityIdStr, dimKey);
                 }
                 applyStandardModifiers(entity, dimConfig, isNight, healthMultiplier, damageMultiplier);
             }
         }
 
-        // Проверяем все атрибуты после применения модификаторов
-        logAllAttributes(entity, "AFTER APPLYING MODIFIERS");
+        // Логируем атрибуты после применения (только если включён debug)
+        if (isDebugLogging()) {
+            logAllAttributes(entity, "AFTER APPLYING MODIFIERS");
+        }
 
-        // Устанавливаем максимальное здоровье после применения всех модификаторов
+        // Устанавливаем здоровье на максимум
         AttributeInstance healthAttr = entity.getAttribute(Attributes.MAX_HEALTH);
         if (healthAttr != null) {
-            float maxHealth = entity.getMaxHealth();
-            entity.setHealth(maxHealth);
+            entity.setHealth(entity.getMaxHealth());
         }
     }
+
+    // ============================================================
+    // Стандартные модификаторы мобов (cave / night / default)
+    // ============================================================
+    public static void applyStandardModifiers(LivingEntity entity, DimensionConfig config,
+                                              boolean isNight, double healthMultiplier, double damageMultiplier) {
+        if (entity == null || config == null) {
+            LOGGER.warn("Entity or config is null, cannot apply standard modifiers");
+            return;
+        }
+
+        boolean isCave = entity.getY() <= config.getCaveHeight();
+
+        // Приоритет: пещерные > ночные > обычные
+        if (isCave && config.getEnableCaveScaling()) {
+            if (isDebugLogging()) {
+            LOGGER.debug("Applying cave modifiers for entity: {}", entity.getType());
+            }
+            applyHealthModifier(entity, config.getCaveHealthAddition(), config.getCaveHealthMultiplier(), healthMultiplier);
+            applyArmorModifier(entity, config.getCaveArmorAddition(), config.getCaveArmorMultiplier(), 1.0);
+            applyArmorToughnessModifier(entity, config.getCaveArmorToughnessAddition(), config.getCaveArmorToughnessMultiplier(), 1.0);
+            if (config.isGravityEnabled()) {
+                applyGravityModifier(entity, config.getGravityMultiplier());
+            }
+            applyLuckModifier(entity, config.getCaveLuckAddition(), config.getCaveLuckMultiplier(), 1.0);
+            applyDamageModifier(entity, config.getCaveDamageAddition(), config.getCaveDamageMultiplier(), damageMultiplier);
+            applySpeedModifier(entity, config.getCaveSpeedAddition(), config.getCaveSpeedMultiplier(), 1.0);
+            applyKnockbackResistanceModifier(entity, config.getCaveKnockbackResistanceAddition(), config.getCaveKnockbackResistanceMultiplier(), 1.0);
+            applyAttackKnockbackModifier(entity, config.getCaveAttackKnockbackAddition(), config.getCaveAttackKnockbackMultiplier(), 1.0);
+            applyAttackSpeedModifier(entity, config.getCaveAttackSpeedAddition(), config.getCaveAttackSpeedMultiplier(), 1.0);
+            applyFollowRangeModifier(entity, config.getCaveFollowRangeAddition(), config.getCaveFollowRangeMultiplier(), 1.0);
+            applyFlyingSpeedModifier(entity, config.getCaveFlyingSpeedAddition(), config.getCaveFlyingSpeedMultiplier(), 1.0);
+            applyBlockInteractionRangeModifier(entity, config.getCaveBlockReachAddition(), config.getCaveBlockReachMultiplier(), 1.0);
+            applyEntityInteractionRangeModifier(entity, config.getCaveEntityReachAddition(), config.getCaveEntityReachMultiplier(), 1.0);
+            applySwimSpeedModifier(entity, config.getCaveSwimSpeedAddition(), config.getCaveSwimSpeedMultiplier(), 1.0);
+            // Extended mob attributes (cave)
+            applyBurningTimeModifier(entity, config.getCaveBurningTimeAddition(), config.getCaveBurningTimeMultiplier(), 1.0);
+            applyExplosionKnockbackResistanceModifier(entity, config.getCaveExplosionKnockbackResistanceAddition(), config.getCaveExplosionKnockbackResistanceMultiplier(), 1.0);
+            applyFallDamageMultiplierModifier(entity, config.getCaveFallDamageMultiplier(), 1.0);
+            applyOxygenBonusModifier(entity, config.getCaveOxygenBonusAddition(), config.getCaveOxygenBonusMultiplier(), 1.0);
+            applySafeFallDistanceModifier(entity, config.getCaveSafeFallDistanceAddition(), config.getCaveSafeFallDistanceMultiplier(), 1.0);
+            applyWaterMovementEfficiencyModifier(entity, config.getCaveWaterMovementEfficiencyAddition(), config.getCaveWaterMovementEfficiencyMultiplier(), 1.0);
+
+        } else if (isNight && config.getEnableNightScaling()) {
+            if (isDebugLogging()) {
+            LOGGER.debug("Applying night modifiers for entity: {}", entity.getType());
+            }
+            applyHealthModifier(entity, config.getNightHealthAddition(), config.getNightHealthMultiplier(), healthMultiplier);
+            applyArmorModifier(entity, config.getNightArmorAddition(), config.getNightArmorMultiplier(), 1.0);
+            applyArmorToughnessModifier(entity, config.getNightArmorToughnessAddition(), config.getNightArmorToughnessMultiplier(), 1.0);
+            if (config.isGravityEnabled()) {
+                applyGravityModifier(entity, config.getGravityMultiplier());
+            }
+            applyLuckModifier(entity, config.getNightLuckAddition(), config.getNightLuckMultiplier(), 1.0);
+            applyDamageModifier(entity, config.getNightDamageAddition(), config.getNightDamageMultiplier(), damageMultiplier);
+            applySpeedModifier(entity, config.getNightSpeedAddition(), config.getNightSpeedMultiplier(), 1.0);
+            applyKnockbackResistanceModifier(entity, config.getNightKnockbackResistanceAddition(), config.getNightKnockbackResistanceMultiplier(), 1.0);
+            applyAttackKnockbackModifier(entity, config.getNightAttackKnockbackAddition(), config.getNightAttackKnockbackMultiplier(), 1.0);
+            applyAttackSpeedModifier(entity, config.getNightAttackSpeedAddition(), config.getNightAttackSpeedMultiplier(), 1.0);
+            applyFollowRangeModifier(entity, config.getNightFollowRangeAddition(), config.getNightFollowRangeMultiplier(), 1.0);
+            applyFlyingSpeedModifier(entity, config.getNightFlyingSpeedAddition(), config.getNightFlyingSpeedMultiplier(), 1.0);
+            applyBlockInteractionRangeModifier(entity, config.getNightBlockReachAddition(), config.getNightBlockReachMultiplier(), 1.0);
+            applyEntityInteractionRangeModifier(entity, config.getNightEntityReachAddition(), config.getNightEntityReachMultiplier(), 1.0);
+            applySwimSpeedModifier(entity, config.getNightSwimSpeedAddition(), config.getNightSwimSpeedMultiplier(), 1.0);
+            // Extended mob attributes (night)
+            applyBurningTimeModifier(entity, config.getNightBurningTimeAddition(), config.getNightBurningTimeMultiplier(), 1.0);
+            applyExplosionKnockbackResistanceModifier(entity, config.getNightExplosionKnockbackResistanceAddition(), config.getNightExplosionKnockbackResistanceMultiplier(), 1.0);
+            applyFallDamageMultiplierModifier(entity, config.getNightFallDamageMultiplier(), 1.0);
+            applyOxygenBonusModifier(entity, config.getNightOxygenBonusAddition(), config.getNightOxygenBonusMultiplier(), 1.0);
+            applySafeFallDistanceModifier(entity, config.getNightSafeFallDistanceAddition(), config.getNightSafeFallDistanceMultiplier(), 1.0);
+            applyWaterMovementEfficiencyModifier(entity, config.getNightWaterMovementEfficiencyAddition(), config.getNightWaterMovementEfficiencyMultiplier(), 1.0);
+
+        } else {
+            if (isDebugLogging()) {
+            LOGGER.debug("Applying default modifiers for entity: {}", entity.getType());
+            }
+            applyHealthModifier(entity, config.getHealthAddition(), config.getHealthMultiplier(), healthMultiplier);
+            applyArmorModifier(entity, config.getArmorAddition(), config.getArmorMultiplier(), 1.0);
+            applyArmorToughnessModifier(entity, config.getArmorToughnessAddition(), config.getArmorToughnessMultiplier(), 1.0);
+            if (config.isGravityEnabled()) {
+                applyGravityModifier(entity, config.getGravityMultiplier());
+            }
+            applyLuckModifier(entity, config.getLuckAddition(), config.getLuckMultiplier(), 1.0);
+            applyDamageModifier(entity, config.getDamageAddition(), config.getDamageMultiplier(), damageMultiplier);
+            applySpeedModifier(entity, config.getSpeedAddition(), config.getSpeedMultiplier(), 1.0);
+            applyKnockbackResistanceModifier(entity, config.getKnockbackResistanceAddition(), config.getKnockbackResistanceMultiplier(), 1.0);
+            applyAttackKnockbackModifier(entity, config.getAttackKnockbackAddition(), config.getAttackKnockbackMultiplier(), 1.0);
+            applyAttackSpeedModifier(entity, config.getAttackSpeedAddition(), config.getAttackSpeedMultiplier(), 1.0);
+            applyFollowRangeModifier(entity, config.getFollowRangeAddition(), config.getFollowRangeMultiplier(), 1.0);
+            applyFlyingSpeedModifier(entity, config.getFlyingSpeedAddition(), config.getFlyingSpeedMultiplier(), 1.0);
+            applyBlockInteractionRangeModifier(entity, config.getBlockReachAddition(), config.getBlockReachMultiplier(), 1.0);
+            applyEntityInteractionRangeModifier(entity, config.getEntityReachAddition(), config.getEntityReachMultiplier(), 1.0);
+            applySwimSpeedModifier(entity, config.getSwimSpeedAddition(), config.getSwimSpeedMultiplier(), 1.0);
+            // Extended mob attributes (default)
+            applyBurningTimeModifier(entity, config.getBurningTimeAddition(), config.getBurningTimeMultiplier(), 1.0);
+            applyExplosionKnockbackResistanceModifier(entity, config.getExplosionKnockbackResistanceAddition(), config.getExplosionKnockbackResistanceMultiplier(), 1.0);
+            applyFallDamageMultiplierModifier(entity, config.getFallDamageMultiplier(), 1.0);
+            applyOxygenBonusModifier(entity, config.getOxygenBonusAddition(), config.getOxygenBonusMultiplier(), 1.0);
+            applySafeFallDistanceModifier(entity, config.getSafeFallDistanceAddition(), config.getSafeFallDistanceMultiplier(), 1.0);
+            applyWaterMovementEfficiencyModifier(entity, config.getWaterMovementEfficiencyAddition(), config.getWaterMovementEfficiencyMultiplier(), 1.0);
+        }
+    }
+
+    // ============================================================
+    // Индивидуальные apply*Modifier методы (для стандартных мобов)
+    // ============================================================
 
     private static void applyHealthModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         AttributeInstance attr = entity.getAttribute(Attributes.MAX_HEALTH);
         if (attr != null) {
             double base = attr.getBaseValue();
-            // Используем общую формулу: (base + addition) * multiplier * difficultyMultiplier
             double newMax = (base + addition) * multiplier * difficultyMultiplier;
-            
-            
-            if (attr.getModifier(HEALTH_MODIFIER_UUID) != null) {
-                attr.removeModifier(HEALTH_MODIFIER_UUID);
-            }
-            attr.addPermanentModifier(createModifier(HEALTH_MODIFIER_UUID, "health", newMax - base));
+            attr.removeModifier(HEALTH_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(HEALTH_MODIFIER, newMax - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
-    
+
     private static void applyArmorModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         AttributeInstance attr = entity.getAttribute(Attributes.ARMOR);
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(ARMOR_MODIFIER_UUID) != null) {
-                attr.removeModifier(ARMOR_MODIFIER_UUID);
-            }
-            attr.addPermanentModifier(createModifier(ARMOR_MODIFIER_UUID, "armor", newValue - base));
+            attr.removeModifier(ARMOR_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(ARMOR_MODIFIER, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
-    
+
     private static void applyArmorToughnessModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         AttributeInstance attr = entity.getAttribute(Attributes.ARMOR_TOUGHNESS);
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(ARMOR_TOUGHNESS_UUID) != null) {
-                attr.removeModifier(ARMOR_TOUGHNESS_UUID);
-            }
-            attr.addPermanentModifier(createModifier(ARMOR_TOUGHNESS_UUID, "armor_toughness", newValue - base));
+            attr.removeModifier(ARMOR_TOUGHNESS_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(ARMOR_TOUGHNESS_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
-    
+
     private static void applyGravityModifier(LivingEntity entity, double multiplier) {
-        // Получаем атрибут гравитации из ForgeMod
         try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field gravityField = forgeModClass.getDeclaredField("ENTITY_GRAVITY");
-            gravityField.setAccessible(true);
-            Object gravitySupplier = gravityField.get(null);
-            
-            if (gravitySupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute gravityAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) gravitySupplier).get();
-                if (gravityAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(gravityAttribute);
-                    if (attr != null) {
-                        double base = attr.getBaseValue();
-                        double newValue = base * multiplier;
-                        double difference = newValue - base;
-                        
-                        if (attr.getModifier(GRAVITY_UUID) != null) {
-                            attr.removeModifier(GRAVITY_UUID);
-                        }
-                        
-                        AttributeModifier modifier = createModifier(GRAVITY_UUID, "gravity", difference);
-                        attr.addPermanentModifier(modifier);
-                        
-                        if(LOGGER.isDebugEnabled()){
-                            LOGGER.debug("Applied gravity modifier to {}: base={}, multiplier={}, new={}",
-                                entity.getType().getDescriptionId(), base, multiplier, newValue);
-                        }
-                    }
-                }
+            AttributeInstance attr = entity.getAttribute(Attributes.GRAVITY);
+            if (attr == null) return;
+
+            double base = attr.getBaseValue();
+            double newValue = base * multiplier;
+            double difference = newValue - base;
+
+            attr.removeModifier(GRAVITY_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(GRAVITY_MODIFIER, difference, AttributeModifier.Operation.ADD_VALUE));
+
+            if (isDebugLogging()) {
+                LOGGER.debug("Applied gravity modifier to {}: base={}, multiplier={}, new={}",
+                    entity.getType().getDescriptionId(), base, multiplier, newValue);
             }
         } catch (Exception e) {
-            LOGGER.error("Error applying gravity modifier", e);
+            LOGGER.error("Error applying gravity modifier for entity {}", entity.getType(), e);
         }
     }
-    
+
     private static void applyLuckModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         AttributeInstance attr = entity.getAttribute(Attributes.LUCK);
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(LUCK_UUID) != null) {
-                attr.removeModifier(LUCK_UUID);
-            }
-            attr.addPermanentModifier(createModifier(LUCK_UUID, "luck", newValue - base));
+            attr.removeModifier(LUCK_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(LUCK_MODIFIER, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
-    
+
     private static void applyDamageModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         AttributeInstance attr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(DAMAGE_MODIFIER_UUID) != null) {
-                attr.removeModifier(DAMAGE_MODIFIER_UUID);
-            }
-            attr.addPermanentModifier(createModifier(DAMAGE_MODIFIER_UUID, "damage", newValue - base));
+            attr.removeModifier(DAMAGE_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(DAMAGE_MODIFIER, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -591,10 +862,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(SPEED_MODIFIER_UUID) != null) {
-                attr.removeModifier(SPEED_MODIFIER_UUID);
-            }
-            attr.addPermanentModifier(createModifier(SPEED_MODIFIER_UUID, "speed", newValue - base));
+            attr.removeModifier(SPEED_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(SPEED_MODIFIER, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -603,10 +872,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(KNOCKBACK_RESISTANCE_UUID) != null) {
-                attr.removeModifier(KNOCKBACK_RESISTANCE_UUID);
-            }
-            attr.addPermanentModifier(createModifier(KNOCKBACK_RESISTANCE_UUID, "knockback_resistance", newValue - base));
+            attr.removeModifier(KNOCKBACK_RESISTANCE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(KNOCKBACK_RESISTANCE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -615,10 +882,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(ATTACK_KNOCKBACK_UUID) != null) {
-                attr.removeModifier(ATTACK_KNOCKBACK_UUID);
-            }
-            attr.addPermanentModifier(createModifier(ATTACK_KNOCKBACK_UUID, "attack_knockback", newValue - base));
+            attr.removeModifier(ATTACK_KNOCKBACK_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(ATTACK_KNOCKBACK_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -627,10 +892,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(ATTACK_SPEED_UUID) != null) {
-                attr.removeModifier(ATTACK_SPEED_UUID);
-            }
-            attr.addPermanentModifier(createModifier(ATTACK_SPEED_UUID, "attack_speed", newValue - base));
+            attr.removeModifier(ATTACK_SPEED_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(ATTACK_SPEED_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -639,10 +902,8 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(FOLLOW_RANGE_UUID) != null) {
-                attr.removeModifier(FOLLOW_RANGE_UUID);
-            }
-            attr.addPermanentModifier(createModifier(FOLLOW_RANGE_UUID, "follow_range", newValue - base));
+            attr.removeModifier(FOLLOW_RANGE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(FOLLOW_RANGE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
 
@@ -651,69 +912,329 @@ public class EntityHandler {
         if (attr != null) {
             double base = attr.getBaseValue();
             double newValue = (base + addition) * multiplier * difficultyMultiplier;
-            if (attr.getModifier(FLYING_SPEED_UUID) != null) {
-                attr.removeModifier(FLYING_SPEED_UUID);
-            }
-            attr.addPermanentModifier(createModifier(FLYING_SPEED_UUID, "flying_speed", newValue - base));
+            attr.removeModifier(FLYING_SPEED_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(FLYING_SPEED_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         }
     }
-    
-    private static void applyReachDistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+
+    private static void applyBlockInteractionRangeModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            reachDistanceField.setAccessible(true);
-            Object reachDistanceSupplier = reachDistanceField.get(null);
-            
-            if (reachDistanceSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute reachDistanceAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) reachDistanceSupplier).get();
-                if (reachDistanceAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(reachDistanceAttribute);
-                    if (attr != null) {
-                        double base = attr.getBaseValue();
-                        double newValue = (base + addition) * multiplier * difficultyMultiplier;
-                        if (attr.getModifier(REACH_DISTANCE_UUID) != null) {
-                            attr.removeModifier(REACH_DISTANCE_UUID);
-                        }
-                        attr.addPermanentModifier(createModifier(REACH_DISTANCE_UUID, "reach_distance", newValue - base));
-                    }
-                }
-            }
+            AttributeInstance attr = entity.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
+            if (attr == null) return;
+
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(BLOCK_INTERACTION_RANGE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(BLOCK_INTERACTION_RANGE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
         } catch (Exception e) {
-            LOGGER.error("Error applying reach distance modifier", e);
+            LOGGER.error("Error applying block interaction range modifier for entity {}", entity.getType(), e);
         }
     }
-    
+
+    private static void applyEntityInteractionRangeModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        try {
+            AttributeInstance attr = entity.getAttribute(Attributes.ENTITY_INTERACTION_RANGE);
+            if (attr == null) return;
+
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(ENTITY_INTERACTION_RANGE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(ENTITY_INTERACTION_RANGE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        } catch (Exception e) {
+            LOGGER.error("Error applying entity interaction range modifier for entity {}", entity.getType(), e);
+        }
+    }
+
     private static void applySwimSpeedModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
         try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            swimSpeedField.setAccessible(true);
-            Object swimSpeedSupplier = swimSpeedField.get(null);
-            
-            if (swimSpeedSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute swimSpeedAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) swimSpeedSupplier).get();
-                if (swimSpeedAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(swimSpeedAttribute);
-                    if (attr != null) {
-                        double base = attr.getBaseValue();
-                        double newValue = (base + addition) * multiplier * difficultyMultiplier;
-                        if (attr.getModifier(SWIM_SPEED_UUID) != null) {
-                            attr.removeModifier(SWIM_SPEED_UUID);
-                        }
-                        attr.addPermanentModifier(createModifier(SWIM_SPEED_UUID, "swim_speed", newValue - base));
+            AttributeInstance attr = entity.getAttribute(NeoForgeMod.SWIM_SPEED);
+            if (attr == null) return;
+
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(SWIM_SPEED_MODIFIER);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(SWIM_SPEED_MODIFIER, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        } catch (Exception e) {
+            LOGGER.error("Error applying swim speed modifier for entity {}", entity.getType(), e);
+        }
+    }
+
+    // Extended mob attribute modifiers (1.21+)
+    private static void applyBurningTimeModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.BURNING_TIME);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(BURNING_TIME_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(BURNING_TIME_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    private static void applyExplosionKnockbackResistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(EXPLOSION_KNOCKBACK_RESISTANCE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(EXPLOSION_KNOCKBACK_RESISTANCE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    private static void applyFallDamageMultiplierModifier(LivingEntity entity, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.FALL_DAMAGE_MULTIPLIER);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = base * multiplier * difficultyMultiplier;
+            attr.removeModifier(FALL_DAMAGE_MULTIPLIER_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(FALL_DAMAGE_MULTIPLIER_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    private static void applyOxygenBonusModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.OXYGEN_BONUS);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(OXYGEN_BONUS_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(OXYGEN_BONUS_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    private static void applySafeFallDistanceModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.SAFE_FALL_DISTANCE);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(SAFE_FALL_DISTANCE_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(SAFE_FALL_DISTANCE_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    private static void applyWaterMovementEfficiencyModifier(LivingEntity entity, double addition, double multiplier, double difficultyMultiplier) {
+        AttributeInstance attr = entity.getAttribute(Attributes.WATER_MOVEMENT_EFFICIENCY);
+        if (attr != null) {
+            double base = attr.getBaseValue();
+            double newValue = (base + addition) * multiplier * difficultyMultiplier;
+            attr.removeModifier(WATER_MOVEMENT_EFFICIENCY_MOD);
+            attr.addOrReplacePermanentModifier(new AttributeModifier(WATER_MOVEMENT_EFFICIENCY_MOD, newValue - base, AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    // ============================================================
+    // removeAllModifiers — полная очистка всех модификаторов мода
+    // ============================================================
+    private static void removeAllModifiers(LivingEntity entity) {
+        if (isDebugLogging()) {
+            LOGGER.debug("Removing modifiers for: {}", entity.getType().getDescriptionId());
+        }
+
+        // Сохраняем базовые значения атрибутов
+        Map<Holder<Attribute>, Double> baseValues = new HashMap<>();
+        for (Holder<Attribute> attribute : getAllAttributes()) {
+            AttributeInstance attr = entity.getAttribute(attribute);
+            if (attr != null) {
+                baseValues.put(attribute, attr.getBaseValue());
+            }
+        }
+
+        // Удаляем все модификаторы мода по ResourceLocation
+        for (Holder<Attribute> attribute : getAllAttributes()) {
+            AttributeInstance attr = entity.getAttribute(attribute);
+            if (attr == null) continue;
+
+            for (ResourceLocation modifierId : ALL_MODIFIER_IDS) {
+                attr.removeModifier(modifierId);
+            }
+        }
+
+        // Удаляем ВСЕ модификаторы с именем "mobscaler:*" (на случай пропущенных)
+        for (Holder<Attribute> attribute : getAllAttributes()) {
+            AttributeInstance attr = entity.getAttribute(attribute);
+            if (attr == null) continue;
+
+            Collection<AttributeModifier> modifiers = attr.getModifiers();
+            List<ResourceLocation> toRemove = new ArrayList<>();
+            for (AttributeModifier modifier : modifiers) {
+                if (modifier.id().getNamespace().equals(MOD_ID)) {
+                    toRemove.add(modifier.id());
+                }
+            }
+            for (ResourceLocation id : toRemove) {
+                attr.removeModifier(id);
+            }
+        }
+
+        // Сбрасываем здоровье к базовому
+        AttributeInstance healthAttr = entity.getAttribute(Attributes.MAX_HEALTH);
+        if (healthAttr != null) {
+            double baseValue = healthAttr.getBaseValue();
+            entity.setHealth((float) baseValue);
+            if (isDebugLogging()) {
+                LOGGER.debug("Reset health to: {}", String.format("%.1f", baseValue));
+            }
+        }
+
+        // Компенсируем урон — добавляем временный модификатор, возвращающий к базовому
+        AttributeInstance damageAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (damageAttr != null) {
+            Double baseValue = baseValues.get(Attributes.ATTACK_DAMAGE);
+            if (baseValue != null) {
+                double currentValue = damageAttr.getValue();
+                if (Math.abs(currentValue - baseValue) > 0.001) {
+                    double diff = baseValue - currentValue;
+
+                    // Сначала удаляем старый компенсационный модификатор если есть
+                    damageAttr.removeModifier(DAMAGE_RESET_MOD);
+
+                    AttributeModifier tempModifier = new AttributeModifier(
+                        DAMAGE_RESET_MOD, diff, AttributeModifier.Operation.ADD_VALUE
+                    );
+                    damageAttr.addTransientModifier(tempModifier);
+
+                    if (isDebugLogging()) {
+                        LOGGER.debug("Added compensation modifier to reset damage: base={}, current={}, diff={}",
+                            String.format("%.1f", baseValue),
+                            String.format("%.1f", currentValue),
+                            String.format("%.1f", diff));
+                    }
+                }
+            }
+        }
+    }
+
+    // ============================================================
+    // Логирование атрибутов (debug)
+    // ============================================================
+    private static void logAllAttributes(LivingEntity entity, String stage) {
+        if (!LOGGER.isDebugEnabled()) return;
+
+        LOGGER.debug("--- {} for entity: {} ---", stage, entity.getType());
+        @SuppressWarnings("unchecked")
+        Holder<Attribute>[] standardAttrs = new Holder[]{
+            Attributes.MAX_HEALTH,
+            Attributes.ARMOR,
+            Attributes.ARMOR_TOUGHNESS,
+            Attributes.ATTACK_DAMAGE,
+            Attributes.MOVEMENT_SPEED,
+            Attributes.KNOCKBACK_RESISTANCE,
+            Attributes.ATTACK_KNOCKBACK,
+            Attributes.ATTACK_SPEED,
+            Attributes.FOLLOW_RANGE,
+            Attributes.FLYING_SPEED,
+            Attributes.LUCK
+        };
+
+        for (Holder<Attribute> attribute : standardAttrs) {
+            AttributeInstance attr = entity.getAttribute(attribute);
+            if (attr != null && (!attr.getModifiers().isEmpty() || attribute.equals(Attributes.MAX_HEALTH))) {
+                LOGGER.debug("Attribute {}: base={}, value={}",
+                    attribute.value().getDescriptionId(),
+                    String.format("%.1f", attr.getBaseValue()),
+                    String.format("%.1f", attr.getValue()));
+
+                for (AttributeModifier modifier : attr.getModifiers()) {
+                    if (Math.abs(modifier.amount()) > 0.001) {
+                        LOGGER.debug("  Modifier: id={}, amount={}",
+                            modifier.id(),
+                            String.format("%.1f", modifier.amount()));
+                    }
+                }
+            }
+        }
+
+        // Гравитация
+        try {
+            AttributeInstance attr = entity.getAttribute(Attributes.GRAVITY);
+            if (attr != null) {
+                LOGGER.debug("Gravity attribute: base={}, value={}",
+                    String.format("%.3f", attr.getBaseValue()),
+                    String.format("%.3f", attr.getValue()));
+
+                for (AttributeModifier modifier : attr.getModifiers()) {
+                    if (Math.abs(modifier.amount()) > 0.0001) {
+                        LOGGER.debug("  Modifier: id={}, amount={}",
+                            modifier.id(),
+                            String.format("%.3f", modifier.amount()));
                     }
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Error applying swim speed modifier", e);
+            // Игнорируем ошибки при логировании
         }
     }
-    
-    private static AttributeModifier createModifier(UUID uuid, String name, double value) {
-        return new AttributeModifier(uuid, "mobscaler_" + name, value, AttributeModifier.Operation.ADDITION);
+
+    // ============================================================
+    // Публичные API для управления конфигурациями
+    // ============================================================
+
+    /**
+     * Принудительно обновляет модификаторы ВСЕХ живых мобов на сервере.
+     * Вызывается при изменении/сохранении конфига через команду.
+     */
+    public static void reloadAllMobs() {
+        net.minecraft.server.MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            LOGGER.warn("Server not available, cannot reload mob modifiers");
+            return;
+        }
+
+        int totalCount = 0;
+        for (Level level : server.getAllLevels()) {
+            int count = reloadMobsInLevel(level);
+            totalCount += count;
+        }
+        LOGGER.info("Reloaded modifiers for {} mobs across all dimensions", totalCount);
+    }
+
+    /**
+     * Обновляет модификаторы всех мобов в конкретном измерении.
+     */
+    public static void reloadMobsInDimension(String dimKey) {
+        net.minecraft.server.MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        String[] parts = dimKey.split(":");
+        ResourceLocation dimLocation = ResourceLocation.fromNamespaceAndPath(parts[0], parts[1]);
+
+        for (Level level : server.getAllLevels()) {
+            if (level.dimension() != null && level.dimension().location().equals(dimLocation)) {
+                int count = reloadMobsInLevel(level);
+                LOGGER.info("Reloaded modifiers for {} mobs in dimension {}", count, dimKey);
+                return;
+            }
+        }
+        LOGGER.warn("Dimension {} not found, cannot reload", dimKey);
+    }
+
+    /**
+     * Внутренний метод: обновляет всех мобов в одном мире.
+     */
+    private static int reloadMobsInLevel(Level level) {
+        if (level.isClientSide()) return 0;
+
+        AABB worldBounds = new AABB(
+            level.getWorldBorder().getMinX(), level.getMinBuildHeight(), level.getWorldBorder().getMinZ(),
+            level.getWorldBorder().getMaxX(), level.getMaxBuildHeight(), level.getWorldBorder().getMaxZ()
+        );
+
+        int count = 0;
+        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, worldBounds)) {
+            if (entity instanceof Player) continue;
+
+            ResourceLocation entityId = EntityType.getKey(entity.getType());
+            DimensionConfig dimConfig = MobScalerConfig.DIMENSIONS.get(
+                level.dimension() != null ? level.dimension().location().toString() : "");
+            if (dimConfig != null && isEntityBlocked(dimConfig, entityId)) continue;
+
+            boolean isNight = isNight(level);
+            double healthMultiplier = getDifficultyMultiplier(level.getDifficulty(), true);
+            double damageMultiplier = getDifficultyMultiplier(level.getDifficulty(), false);
+            String dimKey = level.dimension() != null ? level.dimension().location().toString() : "";
+
+            handleMobModifiers(entity, level, dimKey, isNight, healthMultiplier, damageMultiplier, true);
+            count++;
+        }
+        return count;
     }
 
     public static void addIndividualMobConfig(String entityId, IndividualMobConfig config) {
@@ -730,442 +1251,59 @@ public class EntityHandler {
             LOGGER.warn("Attempted to add null mod config for: {}", modId);
             return;
         }
-        LOGGER.debug("Adding mod config for: {} with attributes: enableNightScaling={}, enableCaveScaling={}, healthMultiplier={}, damageMultiplier={}", 
+        if (isDebugLogging()) {
+        LOGGER.debug("Adding mod config for: {} with attributes: enableNightScaling={}, enableCaveScaling={}, healthMultiplier={}, damageMultiplier={}",
             modId,
             config.getEnableNightScaling(),
             config.getEnableCaveScaling(),
             config.getHealthMultiplier(),
             config.getDamageMultiplier()
         );
+    }
         IndividualMobManager.addModConfig(modId, config);
     }
 
     public static void removeModConfig(String modId) {
+        if (isDebugLogging()) {
         LOGGER.debug("Removing mod config for: {}", modId);
+        }
         IndividualMobManager.removeModConfig(modId);
     }
 
     public static void removeAllModifiersForEntityType(String entityId) {
-        if (entityId != null) {
-            LOGGER.debug("Removing all modifiers for entity type: {}", entityId);
-            String[] parts = entityId.split(":");
-            if (parts.length == 2) {
-                String namespace = parts[0];
-                String path = parts[1];
-                ResourceLocation entityType = new ResourceLocation(namespace, path);
-                
-                // Получаем все сущности в мире
-                for (Level level : ServerLifecycleHooks.getCurrentServer().getAllLevels()) {
-                    AABB worldBounds = new AABB(
-                        level.getWorldBorder().getMinX(), Double.NEGATIVE_INFINITY, level.getWorldBorder().getMinZ(),
-                        level.getWorldBorder().getMaxX(), Double.POSITIVE_INFINITY, level.getWorldBorder().getMaxZ()
-                    );
-                    
-                    int count = 0;
-                    for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, worldBounds)) {
-                        if (EntityType.getKey(entity.getType()).equals(entityType)) {
-                            count++;
-                            removeAllModifiers(entity);
-                            LOGGER.debug("Removed all modifiers from entity #{} of type: {} in world: {}", count, entityId, level.dimension().location());
-                        }
-                    }
-                    
-                    LOGGER.debug("Found and reset {} entities of type {} in world {}", count, entityId, level.dimension().location());
-                }
-            }
+        if (entityId == null) return;
+        if (isDebugLogging()) {
+        LOGGER.debug("Removing all modifiers for entity type: {}", entityId);
         }
-    }
+        String[] parts = entityId.split(":");
+        if (parts.length != 2) return;
 
-    private static void removeAllModifiers(LivingEntity entity) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Removing modifiers for: {}", entity.getType().getDescriptionId());
-        }
-        
-        // Сохраняем базовые значения атрибутов перед удалением модификаторов
-        Map<net.minecraft.world.entity.ai.attributes.Attribute, Double> baseValues = new HashMap<>();
-        
-        // Сначала собираем все базовые значения
-        net.minecraft.world.entity.ai.attributes.Attribute[] attributes = {
-            Attributes.MAX_HEALTH,
-            Attributes.ARMOR,
-            Attributes.ATTACK_DAMAGE,
-            Attributes.MOVEMENT_SPEED,
-            Attributes.KNOCKBACK_RESISTANCE,
-            Attributes.ATTACK_KNOCKBACK,
-            Attributes.ATTACK_SPEED,
-            Attributes.FOLLOW_RANGE,
-            Attributes.FLYING_SPEED,
-            Attributes.ARMOR_TOUGHNESS,
-        };
-        
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributes) {
-            AttributeInstance attr = entity.getAttribute(attribute);
-            if (attr != null) {
-                baseValues.put(attribute, attr.getBaseValue());
-            }
-        }
-        
-        // Удаляем модификаторы для стандартных атрибутов
-        removeModifier(entity, Attributes.MAX_HEALTH, HEALTH_MODIFIER_UUID);
-        removeModifier(entity, Attributes.ARMOR, ARMOR_MODIFIER_UUID);
-        removeModifier(entity, Attributes.ATTACK_DAMAGE, DAMAGE_MODIFIER_UUID);
-        removeModifier(entity, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER_UUID);
-        removeModifier(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE_UUID);
-        removeModifier(entity, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_UUID);
-        removeModifier(entity, Attributes.ATTACK_SPEED, ATTACK_SPEED_UUID);
-        removeModifier(entity, Attributes.FOLLOW_RANGE, FOLLOW_RANGE_UUID);
-        removeModifier(entity, Attributes.FLYING_SPEED, FLYING_SPEED_UUID);
-        removeModifier(entity, Attributes.ARMOR_TOUGHNESS, ARMOR_TOUGHNESS_UUID);
-        
-        // Удаляем модификаторы гравитации через рефлексию
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Гравитация
-            java.lang.reflect.Field gravityField = forgeModClass.getDeclaredField("ENTITY_GRAVITY");
-            gravityField.setAccessible(true);
-            Object gravitySupplier = gravityField.get(null);
-            
-            if (gravitySupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute gravityAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) gravitySupplier).get();
-                if (gravityAttribute != null) {
-                    removeModifier(entity, gravityAttribute, GRAVITY_UUID);
-                }
-            }
-            
-            
-            // Дальность взаимодействия
-            java.lang.reflect.Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            reachDistanceField.setAccessible(true);
-            Object reachDistanceSupplier = reachDistanceField.get(null);
-            
-            if (reachDistanceSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute reachDistanceAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) reachDistanceSupplier).get();
-                if (reachDistanceAttribute != null) {
-                    removeModifier(entity, reachDistanceAttribute, REACH_DISTANCE_UUID);
-                }
-            }
-            
-            // Скорость плавания
-            java.lang.reflect.Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            swimSpeedField.setAccessible(true);
-            Object swimSpeedSupplier = swimSpeedField.get(null);
-            
-            if (swimSpeedSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute swimSpeedAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) swimSpeedSupplier).get();
-                if (swimSpeedAttribute != null) {
-                    removeModifier(entity, swimSpeedAttribute, SWIM_SPEED_UUID);
-                }
-            }
-            
-        } catch (Exception e) {
-            LOGGER.error("Error removing attribute modifiers through reflection", e);
-        }
-        
-        // Удаляем модификаторы по UUID из IndividualMobManager
-        removeModifier(entity, Attributes.MAX_HEALTH, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1071"));
-        removeModifier(entity, Attributes.ARMOR, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1072"));
-        removeModifier(entity, Attributes.ATTACK_DAMAGE, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1073"));
-        removeModifier(entity, Attributes.MOVEMENT_SPEED, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1074"));
-        removeModifier(entity, Attributes.KNOCKBACK_RESISTANCE, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1075"));
-        removeModifier(entity, Attributes.ATTACK_KNOCKBACK, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1076"));
-        removeModifier(entity, Attributes.ATTACK_SPEED, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1077"));
-        removeModifier(entity, Attributes.FOLLOW_RANGE, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1078"));
-        removeModifier(entity, Attributes.FLYING_SPEED, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1079"));
-        
-        // Также удаляем модификаторы для новых атрибутов из IndividualMobManager
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            
-            // Скорость плавания
-            java.lang.reflect.Field swimSpeedField = forgeModClass.getDeclaredField("SWIM_SPEED");
-            swimSpeedField.setAccessible(true);
-            Object swimSpeedSupplier = swimSpeedField.get(null);
-            
-            if (swimSpeedSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute swimSpeedAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) swimSpeedSupplier).get();
-                if (swimSpeedAttribute != null) {
-                    removeModifier(entity, swimSpeedAttribute, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1080"));
-                }
-            }
-            
-            // Дальность взаимодействия
-            java.lang.reflect.Field reachDistanceField = forgeModClass.getDeclaredField("REACH_DISTANCE");
-            reachDistanceField.setAccessible(true);
-            Object reachDistanceSupplier = reachDistanceField.get(null);
-            
-            if (reachDistanceSupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute reachDistanceAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) reachDistanceSupplier).get();
-                if (reachDistanceAttribute != null) {
-                    removeModifier(entity, reachDistanceAttribute, UUID.fromString("d5d0d878-b3c2-4194-a263-6516c85b1082"));
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error removing IndividualMobManager modifiers for new attributes", e);
-        }
-        
-        // Удаляем все модификаторы с именем, содержащим "mobscaler_"
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributes) {
-            AttributeInstance attr = entity.getAttribute(attribute);
-            if (attr != null) {
-                java.util.Collection<AttributeModifier> modifiers = new java.util.ArrayList<>(attr.getModifiers());
-                for (AttributeModifier modifier : modifiers) {
-                    if (modifier.getName().startsWith("mobscaler_")) {
-                        attr.removeModifier(modifier.getId());
+        String namespace = parts[0];
+        String path = parts[1];
+        ResourceLocation entityType = ResourceLocation.fromNamespaceAndPath(namespace, path);
+
+        net.minecraft.server.MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        for (Level level : server.getAllLevels()) {
+            AABB worldBounds = new AABB(
+                level.getWorldBorder().getMinX(), Double.NEGATIVE_INFINITY, level.getWorldBorder().getMinZ(),
+                level.getWorldBorder().getMaxX(), Double.POSITIVE_INFINITY, level.getWorldBorder().getMaxZ()
+            );
+
+            int count = 0;
+            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, worldBounds)) {
+                if (EntityType.getKey(entity.getType()).equals(entityType)) {
+                    count++;
+                    removeAllModifiers(entity);
+                    if (isDebugLogging()) {
+                    LOGGER.debug("Removed all modifiers from entity #{} of type: {} in world: {}",
+                        count, entityId, level.dimension().location());
                     }
                 }
             }
-        }
-        
-        // Сбрасываем здоровье к базовому значению
-        AttributeInstance healthAttr = entity.getAttribute(Attributes.MAX_HEALTH);
-        if (healthAttr != null) {
-            double baseValue = healthAttr.getBaseValue();
-            entity.setHealth((float)baseValue);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Reset health to: {}", String.format("%.1f", baseValue));
-            }
-        }
-        
-        // Сбрасываем урон к базовому значению через добавление временного модификатора компенсации
-        AttributeInstance damageAttr = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (damageAttr != null) {
-            double baseValue = baseValues.get(Attributes.ATTACK_DAMAGE);
-            double currentValue = damageAttr.getValue();
-            
-            // Если текущее значение атрибута отличается от базового после удаления модификаторов,
-            // добавляем компенсирующий модификатор, чтобы вернуть урон к базовому значению
-            if (Math.abs(currentValue - baseValue) > 0.001) {
-                UUID tempUUID = UUID.randomUUID();
-                double diff = baseValue - currentValue;
-                AttributeModifier tempModifier = new AttributeModifier(
-                    tempUUID, "mobscaler_reset_damage", diff, AttributeModifier.Operation.ADDITION
-                );
-                damageAttr.addTransientModifier(tempModifier);
-                
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Added compensation modifier to reset damage: base={}, current={}, diff={}", 
-                        String.format("%.1f", baseValue), 
-                        String.format("%.1f", currentValue), 
-                        String.format("%.1f", diff)
-                    );
-                }
-            }
-        }
-    }
-
-    private static void removeModifier(LivingEntity entity, net.minecraft.world.entity.ai.attributes.Attribute attribute, UUID modifierId) {
-        AttributeInstance attr = entity.getAttribute(attribute);
-        if (attr != null && attr.getModifier(modifierId) != null) {
-            attr.removeModifier(modifierId);
-            if (attribute == Attributes.MAX_HEALTH) {
-                double baseValue = attr.getBaseValue();
-                entity.setHealth((float)baseValue);
-            }
-        }
-    }
-
-    public static void applyStandardModifiers(LivingEntity entity, DimensionConfig config, boolean isNight, double healthMultiplier, double damageMultiplier) {
-        if (entity == null || config == null) {
-            LOGGER.warn("Entity or config is null, cannot apply standard modifiers");
-            return;
-        }
-        
-        LOGGER.debug("Applying standard modifiers for entity: {} with config: {}", entity.getType(), config);
-        
-        boolean isCave = entity.getY() <= config.getCaveHeight();
-        
-        // Проверяем приоритеты: пещерные > ночные > обычные
-        if (isCave && config.getEnableCaveScaling()) {
-            LOGGER.debug("Applying cave modifiers for entity: {}", entity.getType());
-            applyHealthModifier(entity, config.getCaveHealthAddition(), config.getCaveHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, config.getCaveArmorAddition(), config.getCaveArmorMultiplier(), 1.0);
-            applyArmorToughnessModifier(entity, config.getCaveArmorToughnessAddition(), config.getCaveArmorToughnessMultiplier(), 1.0);
-            applyGravityModifier(entity, config.getCaveArmorToughnessMultiplier());
-            if (config.isGravityEnabled()) {
-                applyGravityModifier(entity, config.getGravityMultiplier());
-            }
-            applyLuckModifier(entity, config.getCaveLuckAddition(), config.getCaveLuckMultiplier(), 1.0);
-            applyDamageModifier(entity, config.getCaveDamageAddition(), config.getCaveDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, config.getCaveSpeedAddition(), config.getCaveSpeedMultiplier(), 1.0);
-            applyKnockbackResistanceModifier(entity, config.getCaveKnockbackResistanceAddition(), config.getCaveKnockbackResistanceMultiplier(), 1.0);
-            applyAttackKnockbackModifier(entity, config.getCaveAttackKnockbackAddition(), config.getCaveAttackKnockbackMultiplier(), 1.0);
-            applyAttackSpeedModifier(entity, config.getCaveAttackSpeedAddition(), config.getCaveAttackSpeedMultiplier(), 1.0);
-            applyFollowRangeModifier(entity, config.getCaveFollowRangeAddition(), config.getCaveFollowRangeMultiplier(), 1.0);
-            applyFlyingSpeedModifier(entity, config.getCaveFlyingSpeedAddition(), config.getCaveFlyingSpeedMultiplier(), 1.0);
-            applyReachDistanceModifier(entity, config.getCaveReachDistanceAddition(), config.getCaveReachDistanceMultiplier(), 1.0);
-            applySwimSpeedModifier(entity, config.getCaveSwimSpeedAddition(), config.getCaveSwimSpeedMultiplier(), 1.0);
-        } else if (isNight && config.getEnableNightScaling()) {
-            LOGGER.debug("Applying night modifiers for entity: {}", entity.getType());
-            applyHealthModifier(entity, config.getNightHealthAddition(), config.getNightHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, config.getNightArmorAddition(), config.getNightArmorMultiplier(), 1.0);
-            applyArmorToughnessModifier(entity, config.getNightArmorToughnessAddition(), config.getNightArmorToughnessMultiplier(), 1.0);
-            applyGravityModifier(entity, config.getNightArmorToughnessMultiplier());
-            if (config.isGravityEnabled()) {
-                applyGravityModifier(entity, config.getGravityMultiplier());
-            }
-            applyLuckModifier(entity, config.getNightLuckAddition(), config.getNightLuckMultiplier(), 1.0);
-            applyDamageModifier(entity, config.getNightDamageAddition(), config.getNightDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, config.getNightSpeedAddition(), config.getNightSpeedMultiplier(), 1.0);
-            applyKnockbackResistanceModifier(entity, config.getNightKnockbackResistanceAddition(), config.getNightKnockbackResistanceMultiplier(), 1.0);
-            applyAttackKnockbackModifier(entity, config.getNightAttackKnockbackAddition(), config.getNightAttackKnockbackMultiplier(), 1.0);
-            applyAttackSpeedModifier(entity, config.getNightAttackSpeedAddition(), config.getNightAttackSpeedMultiplier(), 1.0);
-            applyFollowRangeModifier(entity, config.getNightFollowRangeAddition(), config.getNightFollowRangeMultiplier(), 1.0);
-            applyFlyingSpeedModifier(entity, config.getNightFlyingSpeedAddition(), config.getNightFlyingSpeedMultiplier(), 1.0);
-            applyReachDistanceModifier(entity, config.getNightReachDistanceAddition(), config.getNightReachDistanceMultiplier(), 1.0);
-            applySwimSpeedModifier(entity, config.getNightSwimSpeedAddition(), config.getNightSwimSpeedMultiplier(), 1.0);
-        } else {
-            LOGGER.debug("Applying default modifiers for entity: {}", entity.getType());
-            applyHealthModifier(entity, config.getHealthAddition(), config.getHealthMultiplier(), healthMultiplier);
-            applyArmorModifier(entity, config.getArmorAddition(), config.getArmorMultiplier(), 1.0);
-            applyArmorToughnessModifier(entity, config.getArmorToughnessAddition(), config.getArmorToughnessMultiplier(), 1.0);
-            if (config.isGravityEnabled()) {
-                applyGravityModifier(entity, config.getGravityMultiplier());
-            }
-            applyLuckModifier(entity, config.getLuckAddition(), config.getLuckMultiplier(), 1.0);
-            applyDamageModifier(entity, config.getDamageAddition(), config.getDamageMultiplier(), damageMultiplier);
-            applySpeedModifier(entity, config.getSpeedAddition(), config.getSpeedMultiplier(), 1.0);
-            applyKnockbackResistanceModifier(entity, config.getKnockbackResistanceAddition(), config.getKnockbackResistanceMultiplier(), 1.0);
-            applyAttackKnockbackModifier(entity, config.getAttackKnockbackAddition(), config.getAttackKnockbackMultiplier(), 1.0);
-            applyAttackSpeedModifier(entity, config.getAttackSpeedAddition(), config.getAttackSpeedMultiplier(), 1.0);
-            applyFollowRangeModifier(entity, config.getFollowRangeAddition(), config.getFollowRangeMultiplier(), 1.0);
-            applyFlyingSpeedModifier(entity, config.getFlyingSpeedAddition(), config.getFlyingSpeedMultiplier(), 1.0);
-            applyReachDistanceModifier(entity, config.getReachDistanceAddition(), config.getReachDistanceMultiplier(), 1.0);
-            applySwimSpeedModifier(entity, config.getSwimSpeedAddition(), config.getSwimSpeedMultiplier(), 1.0);
-        }
-
-        // Устанавливаем максимальное здоровье после применения всех модификаторов
-        AttributeInstance healthAttr = entity.getAttribute(Attributes.MAX_HEALTH);
-        if (healthAttr != null) {
-            float maxHealth = entity.getMaxHealth();
-            entity.setHealth(maxHealth);
-            LOGGER.debug("Setting entity health to maximum: {}", maxHealth);
-        }
-    }
-
-    private static void logAllAttributes(LivingEntity entity, String stage) {
-        if (!LOGGER.isDebugEnabled()) return;
-        
-        // Логируем только важные изменения
-        LOGGER.debug("--- {} for entity: {} ---", stage, entity.getType());
-        
-        net.minecraft.world.entity.ai.attributes.Attribute[] attributes = {
-            Attributes.MAX_HEALTH,
-            Attributes.ARMOR,
-            Attributes.ARMOR_TOUGHNESS,
-            Attributes.ATTACK_DAMAGE,
-            Attributes.MOVEMENT_SPEED,
-            Attributes.KNOCKBACK_RESISTANCE,
-            Attributes.ATTACK_KNOCKBACK,
-            Attributes.ATTACK_SPEED,
-            Attributes.FOLLOW_RANGE,
-            Attributes.FLYING_SPEED,
-            Attributes.LUCK
-        };
-        
-        // Логируем стандартные атрибуты
-        for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributes) {
-            AttributeInstance attr = entity.getAttribute(attribute);
-            if (attr != null && (attr.getModifiers().size() > 0 || attribute == Attributes.MAX_HEALTH)) {
-                LOGGER.debug("Attribute {}: base={}, value={}", 
-                    attribute.getDescriptionId(), 
-                    String.format("%.1f", attr.getBaseValue()), 
-                    String.format("%.1f", attr.getValue())
-                );
-                
-                // Логируем модификаторы только если они действительно изменяют значение
-                for (AttributeModifier modifier : attr.getModifiers()) {
-                    if (Math.abs(modifier.getAmount()) > 0.001) {
-                        LOGGER.debug("  Modifier: name={}, amount={}", 
-                            modifier.getName(),
-                            String.format("%.1f", modifier.getAmount())
-                        );
-                    }
-                }
-            }
-        }
-        
-        // Логируем атрибут гравитации отдельно, если он доступен
-        try {
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field gravityField = forgeModClass.getDeclaredField("ENTITY_GRAVITY");
-            gravityField.setAccessible(true);
-            Object gravitySupplier = gravityField.get(null);
-            
-            if (gravitySupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute gravityAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) gravitySupplier).get();
-                if (gravityAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(gravityAttribute);
-                    if (attr != null) {
-                        LOGGER.debug("Gravity attribute: base={}, value={}", 
-                            String.format("%.3f", attr.getBaseValue()), 
-                            String.format("%.3f", attr.getValue())
-                        );
-                        
-                        for (AttributeModifier modifier : attr.getModifiers()) {
-                            if (Math.abs(modifier.getAmount()) > 0.0001) {
-                                LOGGER.debug("  Modifier: name={}, amount={}", 
-                                    modifier.getName(),
-                                    String.format("%.3f", modifier.getAmount())
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Игнорируем ошибки при логировании
-        }
-    }
-
-    /**
-     * Обработчик события падения сущности.
-     * Отменяет урон от падения, если множитель гравитации ниже определенного порога.
-     */
-    @SubscribeEvent
-    public static void onEntityFall(LivingFallEvent event) {
-        LivingEntity entity = event.getEntity();
-        try {
-            // Получаем текущее значение множителя гравитации
-            Class<?> forgeModClass = Class.forName("net.minecraftforge.common.ForgeMod");
-            java.lang.reflect.Field gravityField = forgeModClass.getDeclaredField("ENTITY_GRAVITY");
-            gravityField.setAccessible(true);
-            Object gravitySupplier = gravityField.get(null);
-            
-            if (gravitySupplier instanceof java.util.function.Supplier<?>) {
-                net.minecraft.world.entity.ai.attributes.Attribute gravityAttribute = 
-                    (net.minecraft.world.entity.ai.attributes.Attribute) ((java.util.function.Supplier<?>) gravitySupplier).get();
-                if (gravityAttribute != null) {
-                    AttributeInstance attr = entity.getAttribute(gravityAttribute);
-                    if (attr != null) {
-                        double baseGravity = attr.getBaseValue();
-                        double currentGravity = attr.getValue();
-                        double gravityRatio = currentGravity / baseGravity; // Текущий множитель гравитации
-                        
-                        // Если гравитация ниже порога, отменяем урон от падения
-                        if (gravityRatio < NO_FALL_DAMAGE_GRAVITY_THRESHOLD) {
-                            event.setCanceled(true);
-                            LOGGER.debug("Canceled fall damage for entity {} due to low gravity: {}", 
-                                entity.getType().getDescriptionId(), gravityRatio);
-                        } else {
-                            // Можно также масштабировать урон от падения в зависимости от гравитации
-                            float originalDamage = event.getDamageMultiplier();
-                            float scaledDamage = (float)(originalDamage * (gravityRatio / 1.0));
-                            event.setDamageMultiplier(scaledDamage);
-                            LOGGER.debug("Scaled fall damage for entity {} by gravity ratio: {} (original: {}, scaled: {})", 
-                                entity.getType().getDescriptionId(), gravityRatio, originalDamage, scaledDamage);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error handling fall damage", e);
+            if (isDebugLogging()) {
+            LOGGER.debug("Found and reset {} entities of type {} in world {}", count, entityId, level.dimension().location());}
         }
     }
 }
